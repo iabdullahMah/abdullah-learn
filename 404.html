@@ -7,10 +7,23 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="learn" />
-  <meta name="theme-color" content="#0a0a0c" media="(prefers-color-scheme: dark)" />
-  <meta name="theme-color" content="#f7f5ef" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#0a0a0c" />
+  <meta name="theme-color" id="theme-color-meta" content="#0a0a0c" />
   <meta name="description" content="Page not found — abdullah-learn." />
+
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('theme');
+        var sysLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        var effective = stored || (sysLight ? 'light' : 'dark');
+        if (stored === 'dark' || stored === 'light') {
+          document.documentElement.setAttribute('data-theme', stored);
+        }
+        var meta = document.getElementById('theme-color-meta');
+        if (meta) meta.setAttribute('content', effective === 'light' ? '#f7f5ef' : '#0a0a0c');
+      } catch (e) {}
+    })();
+  </script>
 
   <title>404 — abdullah-learn</title>
 

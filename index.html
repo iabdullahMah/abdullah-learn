@@ -7,10 +7,26 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="learn" />
-  <meta name="theme-color" content="#0a0a0c" media="(prefers-color-scheme: dark)" />
-  <meta name="theme-color" content="#f7f5ef" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#0a0a0c" />
+  <!-- One theme-color meta; content is kept in sync with effective theme
+       by the boot script below. Static fallback is dark. -->
+  <meta name="theme-color" id="theme-color-meta" content="#0a0a0c" />
   <meta name="description" content="abdullah-learn — an offensive security notebook by Ag." />
+
+  <!-- Apply stored/system theme before first paint to avoid FOUC. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('theme'); // 'dark' | 'light' | null
+        var sysLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        var effective = stored || (sysLight ? 'light' : 'dark');
+        if (stored === 'dark' || stored === 'light') {
+          document.documentElement.setAttribute('data-theme', stored);
+        }
+        var meta = document.getElementById('theme-color-meta');
+        if (meta) meta.setAttribute('content', effective === 'light' ? '#f7f5ef' : '#0a0a0c');
+      } catch (e) { /* localStorage can throw in private mode; ignore */ }
+    })();
+  </script>
 
   <title>abdullah-learn</title>
 
@@ -35,18 +51,66 @@
       backdrop-filter: saturate(140%) blur(10px);
       border-bottom: 1px solid var(--border);
       padding-top: env(safe-area-inset-top);
+      transition: padding 160ms ease, background 160ms ease;
     }
+    /* When scrolled past the hero, shrink the header so the chips
+       always sit close to the thumb on mobile. */
+    .header--compact { background: rgba(10, 10, 12, 0.94); }
+    .header--compact .header-inner { padding: 4px 0; }
+    .header--compact .brand { font-size: 18px; }
+    .header--compact .header-meta { display: none; }
+
     @media (prefers-color-scheme: light) {
-      .header { background: rgba(247, 245, 239, 0.88); }
+      :root:not([data-theme="dark"]) .header { background: rgba(247, 245, 239, 0.88); }
+      :root:not([data-theme="dark"]) .header--compact { background: rgba(247, 245, 239, 0.94); }
     }
+    :root[data-theme="light"] .header { background: rgba(247, 245, 239, 0.88); }
+    :root[data-theme="light"] .header--compact { background: rgba(247, 245, 239, 0.94); }
 
     .header-inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
       min-height: var(--tap);
-      padding: 10px 0;
+      padding: 8px 0;
+      gap: 12px;
+      transition: padding 160ms ease;
     }
+    .header-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* --- theme toggle button --- */
+    .theme-toggle {
+      width: var(--tap);
+      height: var(--tap);
+      min-height: var(--tap);
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--fg);
+      cursor: pointer;
+    }
+    .theme-toggle:active { background: var(--bg-card-hover); }
+    .theme-toggle svg { width: 18px; height: 18px; display: block; }
+    /* Sun/moon swap based on effective theme. The boot script and
+       toggle handler keep these classes in sync. */
+    .theme-toggle .icon-sun  { display: none; }
+    .theme-toggle .icon-moon { display: block; }
+    :root[data-theme="light"] .theme-toggle .icon-sun { display: block; }
+    :root[data-theme="light"] .theme-toggle .icon-moon { display: none; }
+    @media (prefers-color-scheme: light) {
+      :root:not([data-theme="dark"]) .theme-toggle .icon-sun  { display: block; }
+      :root:not([data-theme="dark"]) .theme-toggle .icon-moon { display: none; }
+    }
+    :root[data-theme="dark"] .theme-toggle .icon-sun  { display: none; }
+    :root[data-theme="dark"] .theme-toggle .icon-moon { display: block; }
 
     .brand {
       display: inline-flex;
@@ -98,18 +162,20 @@
       letter-spacing: 0.04em;
     }
 
-    /* --- hero --- */
-    .hero { padding: 40px 0 24px; }
+    /* --- hero ---
+       Tightened for mobile so the first screen can fit brand + hero +
+       search + every filter chip + the start of a section. */
+    .hero { padding: 22px 0 16px; }
+    @media (min-width: 768px) { .hero { padding: 44px 0 26px; } }
 
     .hero h1 {
       font-family: var(--font-display);
       font-weight: 400;
-      line-height: 1.04;
+      line-height: 1.05;
       letter-spacing: -0.01em;
-      margin: 0 0 18px;
+      margin: 0 0 12px;
       color: var(--fg);
-      /* clamp so it never overflows two lines on 375px */
-      font-size: clamp(38px, 10vw, 84px);
+      font-size: clamp(30px, 8.5vw, 72px);
     }
     .hero h1 em {
       font-style: italic;
@@ -117,9 +183,13 @@
     }
     .hero p.lead {
       color: var(--fg-muted);
-      font-size: 16px;
+      font-size: 14px;
       max-width: 62ch;
-      margin: 0 0 22px;
+      margin: 0 0 14px;
+    }
+    @media (min-width: 768px) {
+      .hero h1   { margin-bottom: 18px; }
+      .hero p.lead { font-size: 16px; margin-bottom: 22px; }
     }
 
     .stats {
@@ -190,50 +260,33 @@
       background: var(--bg);
     }
 
-    /* Chip row scrolls horizontally on mobile. Wrap it so we can fade
-       the right edge — that fade is the scroll affordance, instead of a
-       chip getting visually amputated by the viewport. */
-    .chips-wrap {
-      position: relative;
-      /* Pull the scroller out to the container gutter so the trailing
-         chip can slide fully off-screen under the fade. */
-      margin: 0 -24px;
-    }
+    /* Filter chips wrap onto multiple rows on mobile so all 9 categories
+       are visible at once — no horizontal scroll, no fade hack, no
+       chip getting visually clipped by the viewport edge. */
+    .chips-wrap { position: relative; }
     .chips {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scroll-snap-type: x mandatory;
-      padding: 2px 24px 6px;
-      scrollbar-width: none;
-    }
-    .chips::-webkit-scrollbar { display: none; }
-
-    .chips-wrap::after {
-      content: '';
-      position: absolute;
-      right: 0; top: 0; bottom: 6px;
-      width: 48px;
-      background: linear-gradient(to left, var(--fade-edge-opaque), var(--fade-edge));
-      pointer-events: none;
+      padding: 2px 0 6px;
     }
 
     .chip {
       flex: 0 0 auto;
-      scroll-snap-align: start;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      min-height: var(--tap);
-      padding: 0 14px;
+      /* Slightly smaller min-height on mobile so 9 chips don't dominate
+         the first viewport — still well above Apple's tappable size. */
+      min-height: 38px;
+      padding: 0 12px;
       background: transparent;
       border: 1px solid var(--border);
       border-radius: 999px;
       color: var(--fg-muted);
       font-family: var(--font-mono);
       font-size: 12px;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.02em;
       cursor: pointer;
       white-space: nowrap;
       transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
@@ -254,14 +307,7 @@
     .chip:active { background: var(--bg-card-hover); }
 
     @media (min-width: 768px) {
-      .chips-wrap { margin: 0; }
-      .chips {
-        flex-wrap: wrap;
-        overflow: visible;
-        scroll-snap-type: none;
-        padding: 2px 0 6px;
-      }
-      .chips-wrap::after { display: none; }
+      .chip { min-height: var(--tap); padding: 0 14px; font-size: 12px; }
     }
 
     /* --- category sections --- */
@@ -521,7 +567,76 @@
       return iso;
     }
 
+    // Read effective theme (manual > system) without touching React state —
+    // the boot script in <head> has already applied data-theme.
+    function effectiveTheme() {
+      var attr = document.documentElement.getAttribute('data-theme');
+      if (attr === 'dark' || attr === 'light') return attr;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+        ? 'light' : 'dark';
+    }
+
+    function applyTheme(next) {
+      // next: 'dark' | 'light'. Persist + reflect on <html> + theme-color.
+      try { localStorage.setItem('theme', next); } catch (e) {}
+      document.documentElement.setAttribute('data-theme', next);
+      var meta = document.getElementById('theme-color-meta');
+      if (meta) meta.setAttribute('content', next === 'light' ? '#f7f5ef' : '#0a0a0c');
+    }
+
+    function ThemeToggle() {
+      const [theme, setTheme] = useState(effectiveTheme);
+      function flip() {
+        const next = theme === 'light' ? 'dark' : 'light';
+        applyTheme(next);
+        setTheme(next);
+      }
+      return (
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={flip}
+          aria-label={theme === 'light' ? 'switch to dark mode' : 'switch to light mode'}
+          title={theme === 'light' ? 'switch to dark mode' : 'switch to light mode'}
+        >
+          {/* Both icons live in the DOM; CSS shows the right one based on
+              the effective theme. Avoids state mismatch with system pref. */}
+          <svg className="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+          </svg>
+          <svg className="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </button>
+      );
+    }
+
     function Header({ updated }) {
+      // Compact the header once the user has scrolled past the hero —
+      // saves vertical real estate so chips and content stay near the
+      // thumb on mobile.
+      useEffect(() => {
+        const el = document.querySelector('.header');
+        if (!el) return;
+        let raf = 0;
+        function onScroll() {
+          if (raf) return;
+          raf = requestAnimationFrame(() => {
+            raf = 0;
+            el.classList.toggle('header--compact', window.scrollY > 160);
+          });
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+        return () => {
+          window.removeEventListener('scroll', onScroll);
+          if (raf) cancelAnimationFrame(raf);
+        };
+      }, []);
+
       return (
         <header className="header">
           <div className="container header-inner">
@@ -529,9 +644,12 @@
               <span className="mark" aria-hidden="true"></span>
               <span>abdullah<em>-learn</em></span>
             </a>
-            <span className="header-meta">
-              {updated ? `updated ${updated}` : ''}
-            </span>
+            <div className="header-right">
+              <span className="header-meta">
+                {updated ? `updated ${updated}` : ''}
+              </span>
+              <ThemeToggle />
+            </div>
           </div>
         </header>
       );
@@ -579,25 +697,23 @@
             />
             <span className="kbd-hint" aria-hidden="true">/</span>
           </div>
-          <div className="chips-wrap">
-            <div className="chips" role="tablist" aria-label="categories">
-              {categories.map((c) => {
-                const pressed = selected === c.id;
-                return (
-                  <button
-                    key={c.id}
-                    className="chip"
-                    role="tab"
-                    aria-pressed={pressed}
-                    style={{ '--chip-accent': c.accent }}
-                    onClick={() => setSelected(pressed ? null : c.id)}
-                  >
-                    <span className="dot" aria-hidden="true"></span>
-                    <span>{c.name}</span>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="chips" role="tablist" aria-label="categories">
+            {categories.map((c) => {
+              const pressed = selected === c.id;
+              return (
+                <button
+                  key={c.id}
+                  className="chip"
+                  role="tab"
+                  aria-pressed={pressed}
+                  style={{ '--chip-accent': c.accent }}
+                  onClick={() => setSelected(pressed ? null : c.id)}
+                >
+                  <span className="dot" aria-hidden="true"></span>
+                  <span>{c.name}</span>
+                </button>
+              );
+            })}
           </div>
         </section>
       );
