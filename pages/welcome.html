@@ -16,9 +16,12 @@
         var stored = localStorage.getItem('theme');
         var sysLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
         var effective = stored || (sysLight ? 'light' : 'dark');
+        var root = document.documentElement;
         if (stored === 'dark' || stored === 'light') {
-          document.documentElement.setAttribute('data-theme', stored);
+          root.setAttribute('data-theme', stored);
         }
+        root.classList.toggle('theme-light', effective === 'light');
+        root.classList.toggle('theme-dark',  effective === 'dark');
         var meta = document.getElementById('theme-color-meta');
         if (meta) meta.setAttribute('content', effective === 'light' ? '#f7f5ef' : '#0a0a0c');
       } catch (e) {}

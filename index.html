@@ -12,16 +12,22 @@
   <meta name="theme-color" id="theme-color-meta" content="#0a0a0c" />
   <meta name="description" content="abdullah-learn — an offensive security notebook by Ag." />
 
-  <!-- Apply stored/system theme before first paint to avoid FOUC. -->
+  <!-- Apply stored/system theme before first paint to avoid FOUC.
+       Also tags <html> with theme-light/theme-dark classes as a paint
+       kicker for iOS Safari — flipping only the attribute sometimes
+       left stale body pixels on a theme toggle. -->
   <script>
     (function () {
       try {
         var stored = localStorage.getItem('theme'); // 'dark' | 'light' | null
         var sysLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
         var effective = stored || (sysLight ? 'light' : 'dark');
+        var root = document.documentElement;
         if (stored === 'dark' || stored === 'light') {
-          document.documentElement.setAttribute('data-theme', stored);
+          root.setAttribute('data-theme', stored);
         }
+        root.classList.toggle('theme-light', effective === 'light');
+        root.classList.toggle('theme-dark',  effective === 'dark');
         var meta = document.getElementById('theme-color-meta');
         if (meta) meta.setAttribute('content', effective === 'light' ? '#f7f5ef' : '#0a0a0c');
       } catch (e) { /* localStorage can throw in private mode; ignore */ }
@@ -46,7 +52,11 @@
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(10, 10, 12, 0.88);
+      /* color-mix pulls from var(--bg) so the header can't desync from
+         the body when the theme flips. Fallback: a flat var(--bg) for
+         the rare iOS Safari build without color-mix (< 16.4). */
+      background: var(--bg);
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
       -webkit-backdrop-filter: saturate(140%) blur(10px);
       backdrop-filter: saturate(140%) blur(10px);
       border-bottom: 1px solid var(--border);
@@ -55,17 +65,13 @@
     }
     /* When scrolled past the hero, shrink the header so the chips
        always sit close to the thumb on mobile. */
-    .header--compact { background: rgba(10, 10, 12, 0.94); }
+    .header--compact {
+      background: var(--bg);
+      background: color-mix(in srgb, var(--bg) 94%, transparent);
+    }
     .header--compact .header-inner { padding: 4px 0; }
     .header--compact .brand { font-size: 18px; }
     .header--compact .header-meta { display: none; }
-
-    @media (prefers-color-scheme: light) {
-      :root:not([data-theme="dark"]) .header { background: rgba(247, 245, 239, 0.88); }
-      :root:not([data-theme="dark"]) .header--compact { background: rgba(247, 245, 239, 0.94); }
-    }
-    :root[data-theme="light"] .header { background: rgba(247, 245, 239, 0.88); }
-    :root[data-theme="light"] .header--compact { background: rgba(247, 245, 239, 0.94); }
 
     .header-inner {
       display: flex;
@@ -82,35 +88,38 @@
       gap: 12px;
     }
 
-    /* --- theme toggle button --- */
+    /* --- theme toggle button ---
+       Pill with icon + current-mode label. Sitting on a cream header in
+       light mode, an icon-only outline read as decoration — the word
+       makes it obviously tappable. */
     .theme-toggle {
-      width: var(--tap);
       height: var(--tap);
       min-height: var(--tap);
-      padding: 0;
+      padding: 0 14px 0 12px;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      background: transparent;
-      border: 1px solid var(--border);
+      gap: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
       border-radius: 999px;
       color: var(--fg);
       cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.04em;
     }
     .theme-toggle:active { background: var(--bg-card-hover); }
-    .theme-toggle svg { width: 18px; height: 18px; display: block; }
-    /* Sun/moon swap based on effective theme. The boot script and
-       toggle handler keep these classes in sync. */
+    .theme-toggle svg { width: 16px; height: 16px; display: block; }
+    .theme-toggle .label-light,
+    .theme-toggle .label-dark  { display: none; }
+    /* Sun/moon + label swap driven by the html.theme-light/theme-dark
+       classes. Boot script and applyTheme keep these in sync. */
     .theme-toggle .icon-sun  { display: none; }
     .theme-toggle .icon-moon { display: block; }
-    :root[data-theme="light"] .theme-toggle .icon-sun { display: block; }
-    :root[data-theme="light"] .theme-toggle .icon-moon { display: none; }
-    @media (prefers-color-scheme: light) {
-      :root:not([data-theme="dark"]) .theme-toggle .icon-sun  { display: block; }
-      :root:not([data-theme="dark"]) .theme-toggle .icon-moon { display: none; }
-    }
-    :root[data-theme="dark"] .theme-toggle .icon-sun  { display: none; }
-    :root[data-theme="dark"] .theme-toggle .icon-moon { display: block; }
+    html.theme-light .theme-toggle .icon-sun  { display: block; }
+    html.theme-light .theme-toggle .icon-moon { display: none; }
+    html.theme-light .theme-toggle .label-light { display: inline; }
+    html.theme-dark  .theme-toggle .label-dark  { display: inline; }
 
     .brand {
       display: inline-flex;
@@ -163,54 +172,35 @@
     }
 
     /* --- hero ---
-       Tightened for mobile so the first screen can fit brand + hero +
-       search + every filter chip + the start of a section. */
-    .hero { padding: 22px 0 16px; }
-    @media (min-width: 768px) { .hero { padding: 44px 0 26px; } }
+       Title + one-line byline. No lead paragraph (it was just the
+       tagline repeated), no filler "3 explainers" stats. */
+    .hero { padding: 18px 0 10px; }
+    @media (min-width: 768px) { .hero { padding: 40px 0 18px; } }
 
     .hero h1 {
       font-family: var(--font-display);
       font-weight: 400;
       line-height: 1.05;
       letter-spacing: -0.01em;
-      margin: 0 0 12px;
+      margin: 0 0 10px;
       color: var(--fg);
       font-size: clamp(30px, 8.5vw, 72px);
     }
-    .hero h1 em {
-      font-style: italic;
-      color: var(--fg);
-    }
-    .hero p.lead {
-      color: var(--fg-muted);
-      font-size: 14px;
-      max-width: 62ch;
-      margin: 0 0 14px;
-    }
-    @media (min-width: 768px) {
-      .hero h1   { margin-bottom: 18px; }
-      .hero p.lead { font-size: 16px; margin-bottom: 22px; }
-    }
+    .hero h1 em { font-style: italic; color: var(--fg); }
 
-    .stats {
-      display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
+    .byline {
       font-family: var(--font-mono);
       font-size: 11px;
       color: var(--fg-subtle);
-      letter-spacing: 0.03em;
+      letter-spacing: 0.04em;
+      margin: 0;
     }
-    .stats .stat strong {
-      color: var(--fg);
-      font-weight: 500;
+    .byline em {
+      font-family: var(--font-display);
+      font-style: italic;
+      color: var(--fg-muted);
       font-size: 13px;
-    }
-    .stats .stat .label { margin-left: 6px; }
-    /* The third stat (total categories) is redundant on mobile —
-       the chip row below shows every category. Hide it there. */
-    @media (max-width: 767px) {
-      .stats .stat--tertiary { display: none; }
+      letter-spacing: 0;
     }
 
     /* --- search & chips --- */
@@ -260,16 +250,99 @@
       background: var(--bg);
     }
 
-    /* Filter chips wrap onto multiple rows on mobile so all 9 categories
-       are visible at once — no horizontal scroll, no fade hack, no
-       chip getting visually clipped by the viewport edge. */
+    /* Mobile: chips are collapsed behind a <details> sheet (see
+       .filter below). Desktop: the 9-chip row comes back — there's
+       horizontal room for it and the taps are more precise. */
     .chips-wrap { position: relative; }
     .chips {
-      display: flex;
+      display: none;
       flex-wrap: wrap;
       gap: 8px;
       padding: 2px 0 6px;
     }
+    @media (min-width: 768px) {
+      .chips { display: flex; }
+    }
+
+    /* --- filter sheet (mobile) ---
+       Single tap target that opens a vertical list of categories.
+       Built on <details>/<summary> so it works without JS. */
+    .filter { position: relative; }
+    @media (min-width: 768px) { .filter { display: none; } }
+    .filter > summary {
+      list-style: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: var(--tap);
+      padding: 0 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      color: var(--fg);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .filter > summary::-webkit-details-marker { display: none; }
+    .filter > summary .caret {
+      transition: transform 160ms ease;
+      font-family: var(--font-body);
+      font-size: 14px;
+      opacity: 0.7;
+    }
+    .filter[open] > summary .caret { transform: rotate(180deg); }
+    .filter .sel-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--sel-accent, var(--fg-subtle));
+      filter: var(--accent-filter);
+    }
+
+    .filter-list {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      z-index: 40;
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+    }
+    .filter-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: var(--tap);
+      padding: 0 12px;
+      background: transparent;
+      border: 0;
+      border-radius: var(--radius-sm);
+      color: var(--fg-muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      text-align: left;
+      cursor: pointer;
+    }
+    .filter-item:active { background: var(--bg-card-hover); }
+    .filter-item[aria-pressed="true"] { color: var(--fg); background: var(--bg-card-hover); }
+    .filter-item .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--item-accent, var(--fg-subtle));
+      filter: var(--accent-filter);
+      flex: 0 0 auto;
+    }
+    .filter-item .name { flex: 1; color: var(--fg); font-family: var(--font-body); font-size: 14px; }
+    .filter-item .count { color: var(--fg-subtle); font-size: 11px; }
+    .filter-item--clear { color: var(--fg-muted); font-family: var(--font-mono); font-size: 12px; justify-content: center; border-top: 1px solid var(--border); margin-top: 4px; }
 
     .chip {
       flex: 0 0 auto;
@@ -521,6 +594,22 @@
       font-size: 13px;
     }
 
+    /* One-line roll-up of every category with no entries yet. Replaces
+       the stack of dashed "— awaiting first entry —" placeholders. */
+    .empty-cats {
+      margin: 22px 0 0;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--fg-subtle);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.6;
+      letter-spacing: 0.03em;
+    }
+    .empty-cats strong { color: var(--fg-muted); font-weight: 500; }
+    .empty-cats .names { color: var(--fg-muted); }
+
     /* --- footer --- */
     .footer {
       margin-top: 40px;
@@ -578,8 +667,14 @@
 
     function applyTheme(next) {
       // next: 'dark' | 'light'. Persist + reflect on <html> + theme-color.
+      // Also flip theme-light/theme-dark classes: iOS Safari sometimes
+      // skipped repainting the body when only an attribute changed;
+      // toggling a class on <html> nudges the compositor.
       try { localStorage.setItem('theme', next); } catch (e) {}
-      document.documentElement.setAttribute('data-theme', next);
+      var root = document.documentElement;
+      root.setAttribute('data-theme', next);
+      root.classList.toggle('theme-light', next === 'light');
+      root.classList.toggle('theme-dark',  next === 'dark');
       var meta = document.getElementById('theme-color-meta');
       if (meta) meta.setAttribute('content', next === 'light' ? '#f7f5ef' : '#0a0a0c');
     }
@@ -599,8 +694,8 @@
           aria-label={theme === 'light' ? 'switch to dark mode' : 'switch to light mode'}
           title={theme === 'light' ? 'switch to dark mode' : 'switch to light mode'}
         >
-          {/* Both icons live in the DOM; CSS shows the right one based on
-              the effective theme. Avoids state mismatch with system pref. */}
+          {/* Both icons + labels live in the DOM; CSS picks the pair
+              that matches the effective theme. */}
           <svg className="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="4" />
@@ -610,6 +705,8 @@
                strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
           </svg>
+          <span className="label-light">light</span>
+          <span className="label-dark">dark</span>
         </button>
       );
     }
@@ -656,29 +753,39 @@
     }
 
     function Hero({ data }) {
-      const totalPages = data.pages.length;
-      const activeCats = new Set(data.pages.map((p) => p.category)).size;
-      const totalCats = data.categories.length;
-
       return (
         <section className="hero container">
           <h1>
             Notes from <em>the</em> attack<br/>surface.
           </h1>
-          <p className="lead">
-            {data.tagline || 'An offensive security notebook.'} Scroll, search, tap.
-            Pages land here when Ag asks Jarvis to write one.
+          <p className="byline">
+            <em>by Jarvis, for Ag</em>
+            {data.updated ? ` · updated ${data.updated}` : ''}
           </p>
-          <div className="stats">
-            <span className="stat"><strong>{totalPages}</strong><span className="label">explainers</span></span>
-            <span className="stat"><strong>{activeCats}</strong><span className="label">active categories</span></span>
-            <span className="stat stat--tertiary"><strong>{totalCats}</strong><span className="label">categories total</span></span>
-          </div>
         </section>
       );
     }
 
-    function Controls({ query, setQuery, selected, setSelected, categories, searchRef }) {
+    function Controls({ query, setQuery, selected, setSelected, categories, counts, searchRef }) {
+      const selectedCat = selected ? categories.find((c) => c.id === selected) : null;
+      const filterRef = useRef(null);
+
+      // Close the mobile filter sheet on outside tap and after selection.
+      useEffect(() => {
+        function onDocTap(e) {
+          const el = filterRef.current;
+          if (!el || !el.open) return;
+          if (!el.contains(e.target)) el.open = false;
+        }
+        document.addEventListener('click', onDocTap);
+        return () => document.removeEventListener('click', onDocTap);
+      }, []);
+
+      function pick(id) {
+        setSelected(selected === id ? null : id);
+        if (filterRef.current) filterRef.current.open = false;
+      }
+
       return (
         <section className="controls container" aria-label="filter and search">
           <div className="search">
@@ -697,6 +804,57 @@
             />
             <span className="kbd-hint" aria-hidden="true">/</span>
           </div>
+
+          {/* Mobile: single filter button with a dropdown sheet. */}
+          <details
+            className="filter"
+            ref={filterRef}
+            style={selectedCat ? { '--sel-accent': selectedCat.accent } : null}
+          >
+            <summary>
+              {selectedCat ? (
+                <React.Fragment>
+                  <span className="sel-dot" aria-hidden="true"></span>
+                  <span>{selectedCat.name}</span>
+                </React.Fragment>
+              ) : (
+                <span>filter · all categories</span>
+              )}
+              <span className="caret" aria-hidden="true">▾</span>
+            </summary>
+            <div className="filter-list" role="menu">
+              {categories.map((c) => {
+                const pressed = selected === c.id;
+                const count = counts[c.id] || 0;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    role="menuitemradio"
+                    aria-pressed={pressed}
+                    className="filter-item"
+                    style={{ '--item-accent': c.accent }}
+                    onClick={() => pick(c.id)}
+                  >
+                    <span className="dot" aria-hidden="true"></span>
+                    <span className="name">{c.name}</span>
+                    <span className="count">{count || '—'}</span>
+                  </button>
+                );
+              })}
+              {selected ? (
+                <button
+                  type="button"
+                  className="filter-item filter-item--clear"
+                  onClick={() => { setSelected(null); if (filterRef.current) filterRef.current.open = false; }}
+                >
+                  clear filter
+                </button>
+              ) : null}
+            </div>
+          </details>
+
+          {/* Desktop: full chip row. Hidden under 768px by CSS. */}
           <div className="chips" role="tablist" aria-label="categories">
             {categories.map((c) => {
               const pressed = selected === c.id;
@@ -904,6 +1062,26 @@
         ? data.categories.filter((c) => c.id === selected)
         : data.categories;
 
+      // Counts use the full manifest (not the filtered set) so the
+      // filter sheet shows total entries per category regardless of
+      // current search.
+      const catCounts = {};
+      data.categories.forEach((c) => { catCounts[c.id] = 0; });
+      data.pages.forEach((p) => {
+        if (catCounts[p.category] !== undefined) catCounts[p.category] += 1;
+      });
+
+      // Split visible categories into ones with entries and ones
+      // awaiting their first entry. Empty sections get rolled into a
+      // single quiet line at the bottom instead of stacking dashed
+      // placeholder boxes.
+      const nonEmptyVisibleCats = visibleCats.filter(
+        (c) => (pagesByCat[c.id] || []).length > 0
+      );
+      const emptyCats = selected
+        ? []
+        : data.categories.filter((c) => (catCounts[c.id] || 0) === 0);
+
       const nothingMatches = isFiltered && filteredPages.length === 0;
 
       return (
@@ -916,6 +1094,7 @@
             selected={selected}
             setSelected={setSelected}
             categories={data.categories}
+            counts={catCounts}
             searchRef={searchRef}
           />
           {nothingMatches ? (
@@ -923,23 +1102,37 @@
               nothing matches “{query}”{selected ? ` in ${categoryById[selected].name}` : ''}.
             </div>
           ) : (
-            visibleCats.map((c) => (
-              <CategorySection
-                key={c.id}
-                category={c}
-                pages={pagesByCat[c.id] || []}
-                isFiltered={isFiltered}
-                isSelected={selected === c.id}
-                onExpand={(id) => {
-                  setSelected(id);
-                  // Take the user to the top of the expanded section.
-                  requestAnimationFrame(() => {
-                    const el = document.getElementById(`cat-${id}`);
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  });
-                }}
-              />
-            ))
+            <React.Fragment>
+              {nonEmptyVisibleCats.map((c) => (
+                <CategorySection
+                  key={c.id}
+                  category={c}
+                  pages={pagesByCat[c.id] || []}
+                  isFiltered={isFiltered}
+                  isSelected={selected === c.id}
+                  onExpand={(id) => {
+                    setSelected(id);
+                    requestAnimationFrame(() => {
+                      const el = document.getElementById(`cat-${id}`);
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                  }}
+                />
+              ))}
+              {!isFiltered && emptyCats.length > 0 ? (
+                <div className="container">
+                  <div className="empty-cats">
+                    <strong>+ {emptyCats.length} categor{emptyCats.length === 1 ? 'y' : 'ies'} awaiting first entry:</strong>{' '}
+                    <span className="names">{emptyCats.map((c) => c.name).join(' · ')}</span>
+                  </div>
+                </div>
+              ) : null}
+              {isFiltered && selected && pagesByCat[selected] && pagesByCat[selected].length === 0 ? (
+                <div className="container empty-search">
+                  no entries yet in {categoryById[selected].name}.
+                </div>
+              ) : null}
+            </React.Fragment>
           )}
           <Footer owner={data.owner} />
         </main>
