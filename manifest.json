@@ -68,6 +68,17 @@
       "tags": ["meta", "workflow"],
       "date": "2026-04-16",
       "interactive": false
-    }
+    },
+
+    {
+  "slug": "websphere-architecture",
+  "title": "WebSphere Architecture for Pentesters",
+  "description": "IBM WebSphere components — what they are, how they work, and how to attack them. Includes interactive enterprise architecture diagram.",
+  "category": "enterprise",
+  "tags": ["websphere", "ibm", "java", "enterprise", "architecture", "pentest"],
+  "date": "2026-04-16",
+  "interactive": true
+}
+
   ]
 }

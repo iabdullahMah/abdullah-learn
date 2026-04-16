@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<!-- iOS home-screen / PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WebSphere PT">
+<meta name="theme-color" content="#0c0e12">
+<link rel="apple-touch-icon" href="/assets/icon-180.png">
+<link rel="manifest" href="/manifest.webmanifest">
+
+<title>WebSphere Architecture for Pentesters — abdullah-learn</title>
+<meta name="description" content="IBM WebSphere components — what they are, how they work, and how to attack them. Includes interactive enterprise architecture diagram.">
+
+<link rel="stylesheet" href="/assets/shared.css">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #0c0e12;
+  --bg2: #13161c;
+  --bg3: #1a1e26;
+  --bg4: #242830;
+  --text: #e2e4e8;
+  --text2: #9ca0a8;
+  --text3: #6b7080;
+  --accent: #7c6bf0;
+  --accent2: #a78bfa;
+  --accent-dim: rgba(124,107,240,0.12);
+  --teal: #34d399;
+  --teal-dim: rgba(52,211,153,0.12);
+  --coral: #f97066;
+  --coral-dim: rgba(249,112,102,0.12);
+  --amber: #fbbf24;
+  --amber-dim: rgba(251,191,36,0.12);
+  --blue: #60a5fa;
+  --blue-dim: rgba(96,165,250,0.12);
+  --pink: #f472b6;
+  --pink-dim: rgba(244,114,182,0.12);
+  --enterprise: #5b8def;
+  --border: rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.1);
+  --mono: 'JetBrains Mono', monospace;
+  --serif: 'Source Serif 4', Georgia, serif;
+  --sans: 'DM Sans', sans-serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; background: var(--bg); }
+body {
+  font-family: var(--sans);
+  color: var(--text);
+  line-height: 1.7;
+  background: var(--bg);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+
+/* Layout */
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 24px max(120px, calc(100px + env(safe-area-inset-bottom)));
+}
+
+/* Hero */
+.hero { text-align: center; padding: 32px 0 40px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+.hero h1 {
+  font-family: var(--serif);
+  font-size: clamp(1.7rem, 4.5vw + 0.6rem, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 12px;
+  line-height: 1.15;
+}
+.hero .sub { color: var(--text2); font-size: clamp(0.9rem, 1vw + 0.6rem, 1rem); }
+.hero .badge {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  background: rgba(91,141,239,0.12);
+  color: var(--enterprise);
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid rgba(91,141,239,0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Top: back to index */
+.topbar {
+  padding-top: max(8px, env(safe-area-inset-top));
+  margin-bottom: 8px;
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px 0 0;
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 0.9rem;
+  gap: 6px;
+}
+.back-link:hover { color: var(--accent2); }
+.back-link::before { content: '←'; font-size: 1.1em; }
+
+/* Sticky nav */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(12,14,18,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 24px;
+  padding-top: max(8px, env(safe-area-inset-top));
+  margin: 0 -24px 32px;
+}
+.nav-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.nav-inner::-webkit-scrollbar { display: none; }
+.nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text2);
+  text-decoration: none;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.nav a:hover { color: var(--text); background: var(--bg3); border-color: var(--border2); }
+.nav a.active { color: var(--accent2); background: var(--accent-dim); border-color: rgba(124,107,240,0.2); }
+
+/* Sections */
+.section { margin-bottom: 56px; scroll-margin-top: 80px; }
+.section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.section-num { font-family: var(--mono); font-size: 0.75rem; font-weight: 500; color: var(--accent2); background: var(--accent-dim); padding: 3px 10px; border-radius: 4px; }
+.section h2 { font-family: var(--serif); font-size: clamp(1.3rem, 2vw + 0.8rem, 1.6rem); font-weight: 600; color: var(--text); }
+
+/* Content blocks */
+p { color: var(--text2); margin-bottom: 14px; font-size: 0.95rem; }
+strong { color: var(--text); font-weight: 600; }
+
+/* What/Why/How cards */
+.card-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 20px 0; }
+@media (min-width: 600px) { .card-grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 760px) { .card-grid.three { grid-template-columns: 1fr 1fr 1fr; } }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+.card-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.card-label.what { color: var(--blue); }
+.card-label.why { color: var(--teal); }
+.card-label.how { color: var(--amber); }
+.card-label.pt { color: var(--coral); }
+.card p { margin-bottom: 0; font-size: 0.88rem; }
+
+/* Scenario boxes */
+.scenario { background: var(--bg2); border-left: 3px solid var(--teal); border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 20px 0; }
+.scenario.attack { border-left-color: var(--coral); }
+.scenario .label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.scenario .label.life { color: var(--teal); }
+.scenario .label.atk { color: var(--coral); }
+.scenario p { margin-bottom: 0; }
+
+/* Diagrams */
+.diagram-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 24px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.diagram-wrap svg { display: block; max-width: 100%; height: auto; min-width: 320px; }
+.diagram-cap { text-align: center; font-size: 0.78rem; color: var(--text3); margin-top: 10px; font-style: italic; }
+
+/* SVG text */
+.d-text { font-family: 'DM Sans', sans-serif; fill: var(--text2); font-size: 12px; }
+.d-text-b { font-family: 'DM Sans', sans-serif; fill: var(--text); font-size: 13px; font-weight: 600; }
+.d-text-s { font-family: 'DM Sans', sans-serif; fill: var(--text3); font-size: 11px; }
+.d-box { fill: var(--bg3); stroke: var(--border2); stroke-width: 1; }
+.d-arr { stroke: var(--text3); stroke-width: 1; fill: none; }
+
+/* Inline code */
+code { font-family: var(--mono); font-size: 0.85em; background: var(--bg3); padding: 2px 7px; border-radius: 4px; color: var(--accent2); border: 1px solid var(--border); word-break: break-word; }
+
+/* Lists */
+ul { list-style: none; padding: 0; margin: 12px 0; }
+ul li { position: relative; padding-left: 20px; margin-bottom: 8px; font-size: 0.92rem; color: var(--text2); }
+ul li::before { content: '→'; position: absolute; left: 0; color: var(--accent); font-weight: 500; }
+
+hr { border: none; height: 1px; background: var(--border); margin: 40px 0; }
+
+/* Flow steps */
+.flow-step { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+.flow-num { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; font-family: var(--mono); }
+.flow-num.web { background: var(--teal-dim); color: var(--teal); }
+.flow-num.api { background: var(--coral-dim); color: var(--coral); }
+.flow-step p { margin: 0; font-size: 0.9rem; }
+
+/* Back to top */
+.btt {
+  position: fixed;
+  bottom: max(20px, calc(20px + env(safe-area-inset-bottom)));
+  right: max(20px, calc(20px + env(safe-area-inset-right)));
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 1.1rem;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  z-index: 50;
+}
+.btt:hover { background: var(--accent-dim); color: var(--accent2); border-color: var(--accent); }
+
+/* Reference link chips */
+.ref-list { margin: 16px 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.ref-list a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--accent2);
+  background: var(--accent-dim);
+  text-decoration: none;
+  border: 1px solid rgba(124,107,240,0.15);
+  transition: background 0.15s, border-color 0.15s;
+}
+.ref-list a:hover { background: rgba(124,107,240,0.2); border-color: var(--accent); }
+
+/* Architecture interactive */
+.arch-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+.arch-btn {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--sans);
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.arch-btn:hover { color: var(--text); border-color: var(--accent); }
+.arch-btn.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.arch-legend { display: flex; gap: 16px; margin: 8px 0; font-size: 0.75rem; color: var(--text3); flex-wrap: wrap; }
+.arch-legend span { display: flex; align-items: center; gap: 5px; }
+.arch-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.arch-info { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; font-size: 0.88rem; color: var(--text2); min-height: 60px; margin-top: 10px; line-height: 1.6; }
+.arch-info b { color: var(--text); }
+.arch-info code { font-size: 0.82em; }
+.arch-svg .comp { cursor: pointer; transition: opacity 0.2s; }
+.arch-svg .comp:hover { opacity: 0.85; }
+.arch-svg .fp { transition: opacity 0.3s, stroke-width 0.3s; }
+.arch-svg .fp.dim { opacity: 0.06; }
+.zone-tag { font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* Mobile tweaks */
+@media (max-width: 600px) {
+  .page { padding: 16px 16px max(80px, calc(80px + env(safe-area-inset-bottom))); }
+  .nav { margin: 0 -16px 24px; padding: 8px 16px; padding-top: max(8px, env(safe-area-inset-top)); }
+  .hero { padding: 24px 0 32px; }
+  .section { margin-bottom: 40px; }
+  hr { margin: 32px 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<!-- Top bar with back link -->
+<div class="topbar">
+  <a href="/" class="back-link">Index</a>
+</div>
+
+<!-- ==================== HERO ==================== -->
+<div class="hero">
+  <h1>WebSphere Architecture<br>for Pentesters</h1>
+  <p class="sub">Every component explained — what it is, how it works, why it exists, and how to attack it</p>
+  <span class="badge">Enterprise · Reference</span>
+</div>
+
+<!-- ==================== NAV ==================== -->
+<div class="nav" id="topnav">
+  <div class="nav-inner">
+    <a href="#websphere">WebSphere</a>
+    <a href="#was">WAS</a>
+    <a href="#jvm">JVM</a>
+    <a href="#ihs">IHS</a>
+    <a href="#clusters">Clusters</a>
+    <a href="#nodes">Nodes</a>
+    <a href="#datapower">DataPower</a>
+    <a href="#esp">ESP</a>
+    <a href="#fullflow">Full Flow</a>
+    <a href="#clientarch">Enterprise Arch</a>
+  </div>
+</div>
+
+<!-- ==================== 1. WEBSPHERE ==================== -->
+<div class="section" id="websphere">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2>IBM WebSphere — the big picture</h2>
+  </div>
+
+  <p>WebSphere is not one product — it's IBM's <strong>family of enterprise Java products</strong> that work together to run large-scale web applications. When someone says "we run WebSphere," they mean they're running some combination of these components: WAS (the engine), IHS (the web server), Portal (the UI framework), DataPower (the gateway), and DMGR (the admin brain).</p>
+
+  <p>IBM built this for banks, governments, airlines — anyone who needs "if this goes down, people lose millions." Everything is designed around <strong>high availability</strong> and <strong>separation of concerns</strong>.</p>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <rect x="30" y="30" width="130" height="60" rx="8" fill="rgba(52,211,153,0.12)" stroke="rgba(52,211,153,0.3)"/>
+      <text x="95" y="55" class="d-text-b" text-anchor="middle">IHS</text>
+      <text x="95" y="72" class="d-text-s" text-anchor="middle">Web server</text>
+
+      <rect x="195" y="30" width="130" height="60" rx="8" fill="rgba(124,107,240,0.12)" stroke="rgba(124,107,240,0.3)"/>
+      <text x="260" y="55" class="d-text-b" text-anchor="middle">Portal nodes</text>
+      <text x="260" y="72" class="d-text-s" text-anchor="middle">UI / themes</text>
+
+      <rect x="360" y="30" width="130" height="60" rx="8" fill="rgba(96,165,250,0.12)" stroke="rgba(96,165,250,0.3)"/>
+      <text x="425" y="55" class="d-text-b" text-anchor="middle">WAS</text>
+      <text x="425" y="72" class="d-text-s" text-anchor="middle">Backend Java</text>
+
+      <rect x="525" y="30" width="140" height="60" rx="8" fill="rgba(251,191,36,0.12)" stroke="rgba(251,191,36,0.3)"/>
+      <text x="595" y="55" class="d-text-b" text-anchor="middle">DMGR</text>
+      <text x="595" y="72" class="d-text-s" text-anchor="middle">Admin console</text>
+
+      <line x1="160" y1="60" x2="193" y2="60" stroke="rgba(255,255,255,0.2)" stroke-width="1" marker-end="url(#a1)"/>
+      <text x="177" y="52" class="d-text-s" text-anchor="middle">routes</text>
+      <line x1="325" y1="60" x2="358" y2="60" stroke="rgba(255,255,255,0.2)" stroke-width="1" marker-end="url(#a1)"/>
+      <text x="342" y="52" class="d-text-s" text-anchor="middle">calls</text>
+
+      <rect x="30" y="130" width="130" height="60" rx="8" fill="rgba(249,112,102,0.12)" stroke="rgba(249,112,102,0.3)"/>
+      <text x="95" y="155" class="d-text-b" text-anchor="middle">DataPower</text>
+      <text x="95" y="172" class="d-text-s" text-anchor="middle">Gateway / proxy</text>
+
+      <rect x="195" y="130" width="130" height="60" rx="8" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)"/>
+      <text x="260" y="155" class="d-text-b" text-anchor="middle">Database</text>
+      <text x="260" y="172" class="d-text-s" text-anchor="middle">Persistent data</text>
+
+      <path d="M95 130 L400 92" fill="none" stroke="rgba(249,112,102,0.3)" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#a1)"/>
+      <text x="240" y="118" class="d-text-s" text-anchor="middle" fill="rgba(249,112,102,0.6)">API traffic</text>
+      <line x1="425" y1="90" x2="280" y2="128" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#a1)"/>
+
+      <rect x="30" y="220" width="630" height="44" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)"/>
+      <text x="50" y="236" class="d-text-s">IHS = Waiter</text>
+      <text x="170" y="236" class="d-text-s">Portal = Menu displays</text>
+      <text x="340" y="236" class="d-text-s">WAS = Kitchen</text>
+      <text x="470" y="236" class="d-text-s">DataPower = Bouncer</text>
+      <text x="50" y="254" class="d-text-s">DMGR = Restaurant manager</text>
+      <text x="250" y="254" class="d-text-s">Database = Pantry / records</text>
+    </svg>
+    <div class="diagram-cap">WebSphere product family — not one product, a collection</div>
+  </div>
+
+  <div class="scenario">
+    <div class="label life">Restaurant analogy</div>
+    <p>Think of the whole WebSphere stack as a <strong>large professional restaurant</strong>. There's a waiter (IHS) who greets customers and takes orders. A display kitchen (Portal nodes) where you see your food being plated. A back kitchen (WAS) where the real cooking happens. A bouncer at the VIP entrance (DataPower) who checks credentials. And a restaurant manager (DMGR) who controls everything from the office. Each piece has one job. Together they serve thousands of customers.</p>
+  </div>
+
+  <div class="ref-list">
+    <a href="https://www.ibm.com/docs/en/was" target="_blank" rel="noopener">IBM WAS docs</a>
+    <a href="https://www.ibm.com/docs/en/websphere-portal" target="_blank" rel="noopener">Portal docs</a>
+    <a href="https://www.ibm.com/docs/en/datapower-gateway" target="_blank" rel="noopener">DataPower docs</a>
+  </div>
+</div>
+
+<hr>
+
+<!-- ==================== 2. WAS ==================== -->
+<div class="section" id="was">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2>WAS — WebSphere Application Server</h2>
+  </div>
+
+  <p>WAS is the <strong>core engine</strong> that actually runs Java code. When someone submits a form, makes an API call, or triggers a bank transfer — WAS is where that logic executes. It's a Java EE (now Jakarta EE) application server, meaning it provides a standardized environment for running enterprise Java applications.</p>
+
+  <div class="card-grid three">
+    <div class="card">
+      <div class="card-label what">What it does</div>
+      <p>Runs Servlets, JSPs, EJBs. Manages database connections (JDBC pools), transactions (commit/rollback), security (JAAS), and messaging (JMS queues).</p>
+    </div>
+    <div class="card">
+      <div class="card-label why">Why it's used</div>
+      <p>Raw Java can handle HTTP, but WAS gives clustering, failover, transaction management, connection pooling, and an admin console — you don't build these yourself for millions of banking transactions.</p>
+    </div>
+    <div class="card">
+      <div class="card-label pt">PT surface</div>
+      <p>Admin console <code>/ibm/console</code> on ports 9043/9060. Java deserialization (CVE-2015-7450). JNDI injection. EJB interfaces. IIOP/RMI ports. Default credentials.</p>
+    </div>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <text x="30" y="24" class="d-text-b">Request lifecycle inside WAS</text>
+
+      <rect x="30" y="45" width="90" height="44" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)"/>
+      <text x="75" y="63" class="d-text-s" text-anchor="middle">HTTP in</text>
+      <text x="75" y="78" class="d-text-s" text-anchor="middle">(:9080)</text>
+
+      <rect x="155" y="45" width="110" height="44" rx="6" fill="rgba(96,165,250,0.12)" stroke="rgba(96,165,250,0.3)"/>
+      <text x="210" y="63" class="d-text-b" text-anchor="middle">Servlet</text>
+      <text x="210" y="78" class="d-text-s" text-anchor="middle">handles request</text>
+
+      <rect x="300" y="45" width="110" height="44" rx="6" fill="rgba(124,107,240,0.12)" stroke="rgba(124,107,240,0.3)"/>
+      <text x="355" y="63" class="d-text-b" text-anchor="middle">EJB</text>
+      <text x="355" y="78" class="d-text-s" text-anchor="middle">business logic</text>
+
+      <rect x="445" y="45" width="110" height="44" rx="6" fill="rgba(251,191,36,0.12)" stroke="rgba(251,191,36,0.3)"/>
+      <text x="500" y="63" class="d-text-b" text-anchor="middle">JDBC pool</text>
+      <text x="500" y="78" class="d-text-s" text-anchor="middle">DB connection</text>
+
+      <rect x="590" y="45" width="80" height="44" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)"/>
+      <text x="630" y="63" class="d-text-b" text-anchor="middle">DB</text>
+      <text x="630" y="78" class="d-text-s" text-anchor="middle">query</text>
+
+      <line x1="120" y1="67" x2="153" y2="67" stroke="rgba(255,255,255,0.2)" stroke-width="1" marker-end="url(#a2)"/>
+      <line x1="265" y1="67" x2="298" y2="67" stroke="rgba(255,255,255,0.2)" stroke-width="1" marker-end="url(#a2)"/>
+      <line x1="410" y1="67" x2="443" y2="67" stroke="rgba(255,255,255,0.2)" stroke-width="1" marker-end="url(#a2)"/>
+      <line x1="555" y1="67" x2="588" y2="67" stroke="rgba(255,255,255,0.2)" stroke-width="1" marker-end="url(#a2)"/>
+
+      <rect x="30" y="120" width="640" height="60" rx="8" fill="rgba(249,112,102,0.06)" stroke="rgba(249,112,102,0.15)"/>
+      <text x="50" y="142" class="d-text-b" fill="#f97066">Key ports to probe</text>
+      <text x="50" y="162" class="d-text-s">9080 (HTTP) · 9443 (HTTPS) · 9043 (admin HTTPS) · 9060 (admin HTTP) · 8880 (SOAP) · 2809 (IIOP/RMI)</text>
+    </svg>
+    <div class="diagram-cap">How a request flows inside a WAS server instance</div>
+  </div>
+
+  <div class="scenario">
+    <div class="label life">Restaurant analogy</div>
+    <p>WAS is the <strong>commercial kitchen</strong>. Not a camping stove — a full industrial kitchen with prep stations (servlets), specialized chefs (EJBs for business logic), a walk-in fridge with organized shelves (JDBC connection pool), and a fire suppression system (transaction manager that rolls back if something goes wrong). You could cook on a camping stove, but when you're serving 5,000 banking transactions a minute, you need the full commercial setup.</p>
+  </div>
+</div>
+
+<hr>
+
+<!-- ==================== 3. JVM ==================== -->
+<div class="section" id="jvm">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2>JVM — Java Virtual Machine</h2>
+  </div>
+
+  <p>Every WAS instance, every portal node, every cluster member runs inside a <strong>JVM</strong>. A JVM is a single <code>java</code> process running on the operating system. When WebSphere starts a "server instance," it's literally starting a java process with specific memory settings (heap size, thread count, etc.).</p>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <rect x="20" y="20" width="660" height="280" rx="14" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="6 3"/>
+      <text x="36" y="42" class="d-text-s">OS process (one java process = one JVM = one "server" in WAS terminology)</text>
+
+      <rect x="40" y="55" width="620" height="230" rx="10" fill="rgba(96,165,250,0.06)" stroke="rgba(96,165,250,0.2)"/>
+      <text x="350" y="78" class="d-text-b" text-anchor="middle" fill="#60a5fa">JVM</text>
+
+      <rect x="60" y="95" width="200" height="80" rx="8" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.2)"/>
+      <text x="160" y="115" class="d-text-b" text-anchor="middle" fill="#34d399">Heap memory</text>
+      <text x="160" y="133" class="d-text-s" text-anchor="middle">Objects, sessions, cache</text>
+      <rect x="76" y="145" width="80" height="20" rx="3" fill="rgba(52,211,153,0.15)" stroke="rgba(52,211,153,0.2)"/>
+      <text x="116" y="159" class="d-text-s" text-anchor="middle" fill="#34d399" style="font-size:10px">Sessions</text>
+      <rect x="164" y="145" width="80" height="20" rx="3" fill="rgba(52,211,153,0.15)" stroke="rgba(52,211,153,0.2)"/>
+      <text x="204" y="159" class="d-text-s" text-anchor="middle" fill="#34d399" style="font-size:10px">App data</text>
+
+      <rect x="60" y="190" width="200" height="80" rx="8" fill="rgba(251,191,36,0.08)" stroke="rgba(251,191,36,0.2)"/>
+      <text x="160" y="210" class="d-text-b" text-anchor="middle" fill="#fbbf24">Thread pool</text>
+      <text x="160" y="228" class="d-text-s" text-anchor="middle">Each request = one thread</text>
+      <rect x="76" y="240" width="26" height="16" rx="3" fill="rgba(251,191,36,0.2)" stroke="rgba(251,191,36,0.3)"/>
+      <rect x="106" y="240" width="26" height="16" rx="3" fill="rgba(251,191,36,0.2)" stroke="rgba(251,191,36,0.3)"/>
+      <rect x="136" y="240" width="26" height="16" rx="3" fill="rgba(251,191,36,0.2)" stroke="rgba(251,191,36,0.3)"/>
+      <rect x="166" y="240" width="26" height="16" rx="3" fill="rgba(251,191,36,0.2)" stroke="rgba(251,191,36,0.3)"/>
+      <rect x="196" y="240" width="26" height="16" rx="3" fill="rgba(251,191,36,0.1)" stroke="rgba(251,191,36,0.2)" stroke-dasharray="2 2"/>
+      <text x="89" y="253" class="d-text-s" text-anchor="middle" fill="#fbbf24" style="font-size:9px">T1</text>
+      <text x="119" y="253" class="d-text-s" text-anchor="middle" fill="#fbbf24" style="font-size:9px">T2</text>
+      <text x="149" y="253" class="d-text-s" text-anchor="middle" fill="#fbbf24" style="font-size:9px">T3</text>
+      <text x="179" y="253" class="d-text-s" text-anchor="middle" fill="#fbbf24" style="font-size:9px">T4</text>
+
+      <rect x="290" y="95" width="240" height="55" rx="8" fill="rgba(124,107,240,0.08)" stroke="rgba(124,107,240,0.2)"/>
+      <text x="410" y="115" class="d-text-b" text-anchor="middle" fill="#a78bfa">Application code</text>
+      <text x="410" y="133" class="d-text-s" text-anchor="middle">Servlets, EJBs (.war / .ear)</text>
+
+      <rect x="290" y="165" width="240" height="40" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+      <text x="410" y="189" class="d-text-b" text-anchor="middle">Class loader</text>
+
+      <rect x="290" y="220" width="240" height="50" rx="8" fill="rgba(249,112,102,0.08)" stroke="rgba(249,112,102,0.2)"/>
+      <text x="410" y="240" class="d-text-b" text-anchor="middle" fill="#f97066">Connection pools</text>
+      <text x="410" y="257" class="d-text-s" text-anchor="middle">JDBC to DB, JMS queues</text>
+
+      <line x1="260" y1="130" x2="288" y2="122" stroke="rgba(255,255,255,0.15)" stroke-width="1" marker-end="url(#a3)"/>
+      <text x="274" y="118" class="d-text-s" text-anchor="middle">runs</text>
+      <line x1="562" y1="245" x2="620" y2="245" stroke="rgba(255,255,255,0.15)" stroke-width="1" marker-end="url(#a3)"/>
+      <text x="640" y="240" class="d-text-s" text-anchor="middle">→ DB</text>
+
+      <text x="14" y="233" class="d-text-s" text-anchor="middle" fill="rgba(52,211,153,0.6)">HTTP</text>
+      <line x1="22" y1="240" x2="58" y2="240" stroke="rgba(52,211,153,0.4)" stroke-width="1.5" marker-end="url(#a3)"/>
+    </svg>
+    <div class="diagram-cap">One JVM = one OS process = one "server" in WebSphere terminology</div>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-label what">Key internals</div>
+      <p><strong>Heap</strong> — where sessions and objects live in memory. <strong>Thread pool</strong> — each HTTP request gets one thread; exhaust them and the server stops responding. <strong>Class loader</strong> — loads your .war/.ear application code. <strong>Connection pool</strong> — pre-opened DB connections shared across requests.</p>
+    </div>
+    <div class="card">
+      <div class="card-label pt">PT relevance</div>
+      <p>Crash a JVM via deserialization = only that instance dies, others keep running. Exhaust the thread pool via slow HTTP = denial of service on that JVM. Trigger excessive object creation = <code>OutOfMemoryError</code> crash. Sessions in heap = session fixation/hijacking surface.</p>
+    </div>
+  </div>
+
+  <div class="scenario">
+    <div class="label life">Restaurant analogy</div>
+    <p>The JVM is <strong>one chef with their own workstation</strong>. The chef has a cutting board (heap memory), can handle a specific number of orders at once (thread pool), follows recipes from a cookbook (application code loaded by class loader), and grabs pre-prepped ingredients from containers (connection pool to DB). If you overwhelm one chef with 50 orders, they freeze — but the other chefs at other stations keep working independently.</p>
+  </div>
+</div>
+
+<hr>
+
+<!-- ==================== 4. IHS ==================== -->
+<div class="section" id="ihs">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2>IHS — IBM HTTP Server</h2>
+  </div>
+
+  <p>IHS is IBM's rebranded <strong>Apache HTTP Server</strong> with added IBM modules. It sits at the very front — the first thing that processes an HTTP request after the load balancer. In typical enterprise deployments you'll see <strong>multiple IHS instances</strong> behind an F5 or similar LB.</p>
+
+  <div class="card-grid three">
+    <div class="card">
+      <div class="card-label what">What it does</div>
+      <p>Serves static content (CSS, JS, images) directly. Handles SSL/TLS termination. Runs the <strong>WebSphere Plugin</strong> which reads <code>plugin-cfg.xml</code> to route dynamic requests to the right cluster node.</p>
+    </div>
+    <div class="card">
+      <div class="card-label how">The plugin magic</div>
+      <p><code>plugin-cfg.xml</code> contains a complete map of every cluster, node, IP, and port. The IHS plugin reads this and decides: "this request for <code>/portal/app</code> goes to Cluster C1, Node B" (least connections algorithm).</p>
+    </div>
+    <div class="card">
+      <div class="card-label pt">PT gold</div>
+      <p>If <code>plugin-cfg.xml</code> is accessible (try <code>/plugin-cfg.xml</code> or path traversal), you get the <strong>entire internal network map</strong> — every node IP, port, and cluster topology. Also check: IHS version disclosure, <code>mod_rewrite</code> bypasses, default error pages.</p>
+    </div>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 700 230" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+      <rect x="30" y="30" width="90" height="44" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)"/>
+      <text x="75" y="56" class="d-text-b" text-anchor="middle">Request</text>
+
+      <rect x="160" y="15" width="210" height="100" rx="10" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.2)"/>
+      <text x="265" y="38" class="d-text-b" text-anchor="middle" fill="#34d399">IHS (Apache)</text>
+      <rect x="180" y="50" width="170" height="28" rx="4" fill="rgba(52,211,153,0.15)" stroke="rgba(52,211,153,0.25)"/>
+      <text x="265" y="68" class="d-text-s" text-anchor="middle" fill="#34d399">WebSphere Plugin</text>
+      <text x="265" y="102" class="d-text-s" text-anchor="middle">reads plugin-cfg.xml</text>
+
+      <line x1="120" y1="52" x2="158" y2="52" stroke="rgba(52,211,153,0.4)" stroke-width="1.2" marker-end="url(#a4)"/>
+
+      <rect x="30" y="150" width="100" height="40" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)"/>
+      <text x="80" y="166" class="d-text-s" text-anchor="middle">Static file?</text>
+      <text x="80" y="180" class="d-text-s" text-anchor="middle">Serve directly</text>
+      <line x1="200" y1="115" x2="90" y2="148" stroke="rgba(255,255,255,0.12)" stroke-width="1" marker-end="url(#a4)"/>
+      <text x="130" y="128" class="d-text-s" text-anchor="middle">.css .js .png</text>
+
+      <rect x="420" y="20" width="130" height="40" rx="6" fill="rgba(124,107,240,0.12)" stroke="rgba(124,107,240,0.3)"/>
+      <text x="485" y="44" class="d-text-b" text-anchor="middle" fill="#a78bfa">Cluster C1</text>
+      <rect x="420" y="75" width="130" height="40" rx="6" fill="rgba(124,107,240,0.12)" stroke="rgba(124,107,240,0.3)"/>
+      <text x="485" y="99" class="d-text-b" text-anchor="middle" fill="#a78bfa">Cluster C2</text>
+      <line x1="370" y1="50" x2="418" y2="40" stroke="rgba(124,107,240,0.4)" stroke-width="1.2" marker-end="url(#a4)"/>
+      <line x1="370" y1="70" x2="418" y2="90" stroke="rgba(124,107,240,0.4)" stroke-width="1.2" marker-end="url(#a4)"/>
+      <text x="395" y="58" class="d-text-s" text-anchor="middle" fill="rgba(124,107,240,0.6)">dynamic</text>
+
+      <rect x="560" y="20" width="130" height="110" rx="8" fill="rgba(251,191,36,0.08)" stroke="rgba(251,191,36,0.2)"/>
+      <text x="625" y="40" class="d-text-b" text-anchor="middle" fill="#fbbf24">plugin-cfg.xml</text>
+      <text x="580" y="60" class="d-text-s" fill="#fbbf24" style="font-size:10px">ClusterC1:</text>
+      <text x="590" y="74" class="d-text-s" style="font-size:10px">NodeA:9080</text>
+      <text x="590" y="86" class="d-text-s" style="font-size:10px">NodeB:9080</text>
+      <text x="590" y="98" class="d-text-s" style="font-size:10px">NodeC:9080</text>
+      <text x="580" y="116" class="d-text-s" fill="#fbbf24" style="font-size:10px">ClusterC2: ...</text>
+
+      <rect x="200" y="160" width="490" height="50" rx="8" fill="rgba(249,112,102,0.06)" stroke="rgba(249,112,102,0.15)"/>
+      <text x="220" y="182" class="d-text-b" fill="#f97066">PT note:</text>
+      <text x="290" y="182" class="d-text-s">Exposed plugin-cfg.xml = full internal network map (every IP + port)</text>
+      <text x="220" y="198" class="d-text-s">Try: /plugin-cfg.xml, path traversal, error message disclosure</text>
+    </svg>
+    <div class="diagram-cap">IHS routes static content directly, dynamic content to clusters via plugin</div>
+  </div>
+
+  <div class="scenario">
+    <div class="label life">Restaurant analogy</div>
+    <p>IHS is the <strong>waiter</strong>. Customer walks in and says what they want. If it's something on the counter already (bread, water = static file), the waiter grabs it directly without going to the kitchen. If it's a cooked dish (dynamic request), the waiter checks the <strong>seating chart</strong> (plugin-cfg.xml) to know which kitchen line handles which section, and sends the order to the right one.</p>
+  </div>
+</div>
+
+<hr>
+
+<!-- ==================== 5. CLUSTERS ==================== -->
+<div class="section" id="clusters">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2>Clusters — why they exist</h2>
+  </div>
+
+  <p>A cluster is a <strong>group of identical JVM instances</strong> running the exact same application, working together as one logical unit. Typical enterprise setup: 2 clusters per IHS (C1 and C2), each cluster with 3 nodes (A, B, C).</p>
+
+  <div class="card-grid three">
+    <div class="card">
+      <div class="card-label what">High availability</div>
+      <p>If Node A dies, Nodes B and C keep serving. The WebSphere plugin in IHS detects the dead node and stops sending it traffic. Users never notice.</p>
+    </div>
+    <div class="card">
+      <div class="card-label why">Scalability</div>
+      <p>1 JVM handles ~200 concurrent users. Need 600? Run 3 nodes in a cluster. Need 1,200? Add more. Scale horizontally without rewriting code.</p>
+    </div>
+    <div class="card">
+      <div class="card-label how">Session failover</div>
+      <p>If user_42's session is on Node A and it crashes, the session was already replicated to Node B via <strong>DRS</strong> (Data Replication Service). User keeps working.</p>
+    </div>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 700 290" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+      <rect x="30" y="40" width="100" height="40" rx="6" fill="rgba(52,211,153,0.12)" stroke="rgba(52,211,153,0.3)"/>
+      <text x="80" y="64" class="d-text-b" text-anchor="middle" fill="#34d399">IHS</text>
+
+      <rect x="180" y="15" width="490" height="155" rx="12" fill="none" stroke="rgba(124,107,240,0.2)" stroke-width="1" stroke-dasharray="5 3"/>
+      <text x="196" y="36" class="d-text-s" fill="#a78bfa">Cluster C1 — all 3 run the same .ear/.war</text>
+
+      <rect x="200" y="50" width="130" height="70" rx="8" fill="rgba(124,107,240,0.08)" stroke="rgba(124,107,240,0.2)"/>
+      <text x="265" y="72" class="d-text-b" text-anchor="middle" fill="#a78bfa">Node A</text>
+      <text x="265" y="88" class="d-text-s" text-anchor="middle">JVM :9080</text>
+      <rect x="218" y="98" width="94" height="16" rx="3" fill="rgba(124,107,240,0.12)" stroke="rgba(124,107,240,0.2)"/>
+      <text x="265" y="110" class="d-text-s" text-anchor="middle" fill="#a78bfa" style="font-size:9px">Session: user_42</text>
+
+      <rect x="355" y="50" width="130" height="70" rx="8" fill="rgba(124,107,240,0.08)" stroke="rgba(124,107,240,0.2)"/>
+      <text x="420" y="72" class="d-text-b" text-anchor="middle" fill="#a78bfa">Node B</text>
+      <text x="420" y="88" class="d-text-s" text-anchor="middle">JVM :9080</text>
+      <rect x="373" y="98" width="94" height="16" rx="3" fill="rgba(124,107,240,0.12)" stroke="rgba(124,107,240,0.2)"/>
+      <text x="420" y="110" class="d-text-s" text-anchor="middle" fill="#a78bfa" style="font-size:9px">Session: user_42</text>
+
+      <rect x="510" y="50" width="130" height="70" rx="8" fill="rgba(124,107,240,0.08)" stroke="rgba(124,107,240,0.2)"/>
+      <text x="575" y="72" class="d-text-b" text-anchor="middle" fill="#a78bfa">Node C</text>
+      <text x="575" y="88" class="d-text-s" text-anchor="middle">JVM :9080</text>
+      <rect x="528" y="98" width="94" height="16" rx="3" fill="rgba(124,107,240,0.12)" stroke="rgba(124,107,240,0.2)"/>
+      <text x="575" y="110" class="d-text-s" text-anchor="middle" fill="#a78bfa" style="font-size:9px">Session: user_42</text>
+
+      <line x1="330" y1="140" x2="373" y2="140" stroke="rgba(124,107,240,0.3)" stroke-width="0.8" stroke-dasharray="3 2"/>
+      <line x1="485" y1="140" x2="528" y2="140" stroke="rgba(124,107,240,0.3)" stroke-width="0.8" stroke-dasharray="3 2"/>
+      <text x="420" y="158" class="d-text-s" text-anchor="middle" fill="rgba(124,107,240,0.6)">Session replication (DRS)</text>
+
+      <line x1="130" y1="55" x2="198" y2="75" stroke="rgba(52,211,153,0.5)" stroke-width="1.2" marker-end="url(#a5)"/>
+      <path d="M130 55 L170 55 L353 75" fill="none" stroke="rgba(52,211,153,0.3)" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#a5)"/>
+      <path d="M130 55 L170 55 L508 75" fill="none" stroke="rgba(52,211,153,0.3)" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#a5)"/>
+      <text x="160" y="46" class="d-text-s" fill="rgba(52,211,153,0.6)">picks one</text>
+
+      <rect x="30" y="195" width="640" height="36" rx="6" fill="rgba(249,112,102,0.06)" stroke="rgba(249,112,102,0.12)"/>
+      <text x="50" y="217" class="d-text-s" fill="#f97066">Node A dies → IHS detects failure → routes user_42 to Node B → session already replicated → zero downtime</text>
+
+      <rect x="30" y="242" width="640" height="36" rx="6" fill="rgba(52,211,153,0.06)" stroke="rgba(52,211,153,0.12)"/>
+      <text x="50" y="264" class="d-text-s" fill="#34d399">Traffic spikes → admin adds Node D to cluster → plugin config auto-updates → no code changes needed</text>
+    </svg>
+    <div class="diagram-cap">3 identical nodes in a cluster with session replication for failover</div>
+  </div>
+
+  <div class="scenario">
+    <div class="label life">Restaurant analogy</div>
+    <p>A cluster is <strong>three identical kitchen lines</strong> side by side. Each line has the same equipment, same recipes, same menu. If kitchen line 1 catches fire, lines 2 and 3 keep cooking. Friday night rush? All 3 lines work simultaneously. A customer's order ticket (session) is copied to a shared board — any line can pick it up if the original goes down.</p>
+  </div>
+</div>
+
+<hr>
+
+<!-- ==================== 6. NODES ==================== -->
+<div class="section" id="nodes">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2>Nodes — and what "code viewable" means</h2>
+  </div>
+
+  <p>In typical enterprise architectures, the <strong>cluster nodes</strong> run <strong>WebSphere Portal</strong> — the presentation/UI layer. The WAS servers run the backend logic. When ops folks say the nodes have "code viewable," they mean the portal nodes contain the <strong>presentation layer</strong> — what the user actually sees.</p>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 700 350" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+      <rect x="30" y="20" width="280" height="260" rx="12" fill="rgba(124,107,240,0.06)" stroke="rgba(124,107,240,0.2)"/>
+      <text x="170" y="44" class="d-text-b" text-anchor="middle" fill="#a78bfa">Portal node (cluster member)</text>
+      <text x="170" y="62" class="d-text-s" text-anchor="middle">What the user "sees" — the viewable code</text>
+
+      <rect x="50" y="78" width="240" height="36" rx="6" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.15)"/>
+      <text x="170" y="100" class="d-text-b" text-anchor="middle" fill="#34d399">Themes + CSS + JS</text>
+
+      <rect x="50" y="124" width="240" height="36" rx="6" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.15)"/>
+      <text x="170" y="146" class="d-text-b" text-anchor="middle" fill="#34d399">Portlets (UI widgets)</text>
+
+      <rect x="50" y="170" width="240" height="36" rx="6" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.15)"/>
+      <text x="170" y="192" class="d-text-b" text-anchor="middle" fill="#34d399">JSP / HTML templates</text>
+
+      <rect x="50" y="222" width="240" height="44" rx="6" fill="rgba(251,191,36,0.08)" stroke="rgba(251,191,36,0.2)"/>
+      <text x="170" y="240" class="d-text-b" text-anchor="middle" fill="#fbbf24">Actions / service calls</text>
+      <text x="170" y="256" class="d-text-s" text-anchor="middle">Calls WAS via SOAP/REST/EJB</text>
+
+      <rect x="390" y="20" width="280" height="260" rx="12" fill="rgba(96,165,250,0.06)" stroke="rgba(96,165,250,0.2)"/>
+      <text x="530" y="44" class="d-text-b" text-anchor="middle" fill="#60a5fa">WAS server (backend)</text>
+      <text x="530" y="62" class="d-text-s" text-anchor="middle">What actually "does" things</text>
+
+      <rect x="410" y="78" width="240" height="36" rx="6" fill="rgba(96,165,250,0.08)" stroke="rgba(96,165,250,0.15)"/>
+      <text x="530" y="100" class="d-text-b" text-anchor="middle" fill="#60a5fa">Business services</text>
+
+      <rect x="410" y="124" width="240" height="36" rx="6" fill="rgba(96,165,250,0.08)" stroke="rgba(96,165,250,0.15)"/>
+      <text x="530" y="146" class="d-text-b" text-anchor="middle" fill="#60a5fa">Transaction manager</text>
+
+      <rect x="410" y="170" width="240" height="36" rx="6" fill="rgba(96,165,250,0.08)" stroke="rgba(96,165,250,0.15)"/>
+      <text x="530" y="192" class="d-text-b" text-anchor="middle" fill="#60a5fa">Data access (DAO / SQL)</text>
+
+      <rect x="410" y="222" width="240" height="36" rx="6" fill="rgba(96,165,250,0.08)" stroke="rgba(96,165,250,0.15)"/>
+      <text x="530" y="244" class="d-text-b" text-anchor="middle" fill="#60a5fa">External integration</text>
+
+      <line x1="310" y1="244" x2="388" y2="190" stroke="rgba(249,112,102,0.5)" stroke-width="2" marker-end="url(#a6)"/>
+      <text x="355" y="206" class="d-text-s" text-anchor="middle" fill="#f97066">SOAP / REST</text>
+
+      <rect x="30" y="300" width="640" height="40" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)"/>
+      <text x="350" y="316" class="d-text-s" text-anchor="middle">User clicks "Transfer" → Portal node renders form (JSP + theme) → portlet action fires →</text>
+      <text x="350" y="332" class="d-text-s" text-anchor="middle">calls WAS backend → WAS validates + DB transaction → returns result to portal for display</text>
+    </svg>
+    <div class="diagram-cap">Portal node = presentation (viewable code) vs WAS = backend (business logic)</div>
+  </div>
+
+  <p>Here's what lives on the portal node — <strong>the "code viewable" parts:</strong></p>
+  <ul>
+    <li><strong>Themes</strong> — the HTML/CSS/JS that controls how pages look</li>
+    <li><strong>Portlets</strong> — small Java web components (widgets) that each handle a piece of the UI (account summary portlet, transaction history portlet, transfer form portlet)</li>
+    <li><strong>JSP pages</strong> — server-side templates that generate the HTML sent to the browser</li>
+    <li><strong>Actions</strong> — when a user clicks a button, the portlet fires an "action" that makes a SOAP/REST/EJB call to the WAS backend where the real logic lives</li>
+  </ul>
+
+  <p>The node is the presentation layer. It knows <em>how to display things</em> and <em>how to ask WAS to do things</em>. It does NOT contain the business logic itself.</p>
+
+  <div class="scenario">
+    <div class="label life">Restaurant analogy</div>
+    <p>The portal node is the <strong>open display kitchen</strong> — the fancy one customers can see from their table. You watch the chef plate your dish beautifully (themes, UI). But the actual cooking (raw meat prep, sauce reduction, oven work) happened in the <strong>back kitchen</strong> you can't see (WAS). The display chef's job is to assemble, present, and hand you the final plate. When you say "add extra sauce," the display chef yells to the back kitchen (service call), they do it, and send it forward.</p>
+  </div>
+</div>
+
+<hr>
+
+<!-- ==================== 7. DATAPOWER ==================== -->
+<div class="section" id="datapower">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2>DataPower — the gateway</h2>
+  </div>
+
+  <p>IBM DataPower is a <strong>purpose-built gateway appliance</strong> (hardware or virtual). It's not a general-purpose server — it's specifically designed to sit at the network edge and handle security, transformation, and routing of messages at wire speed. The OS is locked down, hardened, no shell access by default.</p>
+
+  <p>Every request that passes through DataPower goes through a <strong>processing policy</strong> — a pipeline of steps. If any step fails, the request is rejected before it ever reaches WAS.</p>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a7" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+      <text x="30" y="24" class="d-text-b">DataPower processing policy — every request goes through this pipeline</text>
+
+      <rect x="20" y="50" width="70" height="36" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)"/>
+      <text x="55" y="72" class="d-text-s" text-anchor="middle">Request</text>
+
+      <rect x="110" y="45" width="88" height="46" rx="6" fill="rgba(249,112,102,0.1)" stroke="rgba(249,112,102,0.25)"/>
+      <text x="154" y="64" class="d-text-s" text-anchor="middle" fill="#f97066" style="font-weight:600;font-size:10px">SSL</text>
+      <text x="154" y="78" class="d-text-s" text-anchor="middle" style="font-size:10px">terminate</text>
+
+      <rect x="210" y="45" width="88" height="46" rx="6" fill="rgba(249,112,102,0.1)" stroke="rgba(249,112,102,0.25)"/>
+      <text x="254" y="64" class="d-text-s" text-anchor="middle" fill="#f97066" style="font-weight:600;font-size:10px">Auth</text>
+      <text x="254" y="78" class="d-text-s" text-anchor="middle" style="font-size:10px">token/cert</text>
+
+      <rect x="310" y="45" width="88" height="46" rx="6" fill="rgba(249,112,102,0.1)" stroke="rgba(249,112,102,0.25)"/>
+      <text x="354" y="64" class="d-text-s" text-anchor="middle" fill="#f97066" style="font-weight:600;font-size:10px">Schema</text>
+      <text x="354" y="78" class="d-text-s" text-anchor="middle" style="font-size:10px">XML/JSON</text>
+
+      <rect x="410" y="45" width="88" height="46" rx="6" fill="rgba(249,112,102,0.1)" stroke="rgba(249,112,102,0.25)"/>
+      <text x="454" y="64" class="d-text-s" text-anchor="middle" fill="#f97066" style="font-weight:600;font-size:10px">Threats</text>
+      <text x="454" y="78" class="d-text-s" text-anchor="middle" style="font-size:10px">SQLi, XXE</text>
+
+      <rect x="510" y="45" width="88" height="46" rx="6" fill="rgba(249,112,102,0.1)" stroke="rgba(249,112,102,0.25)"/>
+      <text x="554" y="64" class="d-text-s" text-anchor="middle" fill="#f97066" style="font-weight:600;font-size:10px">Transform</text>
+      <text x="554" y="78" class="d-text-s" text-anchor="middle" style="font-size:10px">XSLT / map</text>
+
+      <rect x="610" y="45" width="70" height="46" rx="6" fill="rgba(249,112,102,0.1)" stroke="rgba(249,112,102,0.25)"/>
+      <text x="645" y="64" class="d-text-s" text-anchor="middle" fill="#f97066" style="font-weight:600;font-size:10px">Route</text>
+      <text x="645" y="78" class="d-text-s" text-anchor="middle" style="font-size:10px">backend</text>
+
+      <line x1="90" y1="68" x2="108" y2="68" stroke="rgba(249,112,102,0.3)" stroke-width="1" marker-end="url(#a7)"/>
+      <line x1="198" y1="68" x2="208" y2="68" stroke="rgba(249,112,102,0.3)" stroke-width="1" marker-end="url(#a7)"/>
+      <line x1="298" y1="68" x2="308" y2="68" stroke="rgba(249,112,102,0.3)" stroke-width="1" marker-end="url(#a7)"/>
+      <line x1="398" y1="68" x2="408" y2="68" stroke="rgba(249,112,102,0.3)" stroke-width="1" marker-end="url(#a7)"/>
+      <line x1="498" y1="68" x2="508" y2="68" stroke="rgba(249,112,102,0.3)" stroke-width="1" marker-end="url(#a7)"/>
+      <line x1="598" y1="68" x2="608" y2="68" stroke="rgba(249,112,102,0.3)" stroke-width="1" marker-end="url(#a7)"/>
+
+      <rect x="110" y="110" width="90" height="30" rx="6" fill="rgba(249,112,102,0.06)" stroke="rgba(249,112,102,0.15)"/>
+      <text x="155" y="129" class="d-text-s" text-anchor="middle" fill="#f97066">→ Reject</text>
+      <text x="260" y="129" class="d-text-s" fill="rgba(255,255,255,0.3)">fails any step</text>
+
+      <rect x="510" y="110" width="100" height="30" rx="6" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.15)"/>
+      <text x="560" y="129" class="d-text-s" text-anchor="middle" fill="#34d399">→ Backend</text>
+      <text x="430" y="129" class="d-text-s" fill="rgba(255,255,255,0.3)">passes all steps</text>
+
+      <rect x="30" y="160" width="640" height="80" rx="8" fill="rgba(249,112,102,0.05)" stroke="rgba(249,112,102,0.12)"/>
+      <text x="50" y="182" class="d-text-b" fill="#f97066">PT attack surface</text>
+      <text x="50" y="200" class="d-text-s">Schema validation bypass (malformed JSON/XML) · Content-type switching (JSON→XML for XXE)</text>
+      <text x="50" y="216" class="d-text-s">XSLT injection · Header injection to manipulate routing · Admin interfaces (5550 XML, 9090 web GUI)</text>
+      <text x="50" y="232" class="d-text-s">Rate limit bypass · Custom error messages leaking backend details · Certificate pinning issues</text>
+    </svg>
+    <div class="diagram-cap">Every request passes through this pipeline — if any step fails, the request never reaches WAS</div>
+  </div>
+
+  <div class="scenario">
+    <div class="label life">Restaurant analogy</div>
+    <p>DataPower is the <strong>health inspector permanently stationed at the delivery entrance</strong>. Every food delivery (API request) comes through this inspector. They check: is the delivery company authorized (authentication)? Is the food properly labeled (schema validation)? Is it at the right temperature (threat protection)? Is it within the daily order limit (rate limiting)? Only after passing ALL checks does the food enter the kitchen. Anything that fails gets sent back at the door.</p>
+  </div>
+
+  <div class="ref-list">
+    <a href="https://www.ibm.com/docs/en/datapower-gateway" target="_blank" rel="noopener">DataPower gateway docs</a>
+    <a href="https://www.ibm.com/docs/en/datapower-gateway/10.5?topic=concepts-processing-policy" target="_blank" rel="noopener">Processing policies</a>
+  </div>
+</div>
+
+<hr>
+
+<!-- ==================== 8. ESP ==================== -->
+<div class="section" id="esp">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2>ESP — Enterprise Service Proxy</h2>
+  </div>
+
+  <p>ESP is not a separate product — it's a <strong>role that DataPower plays</strong>. When DataPower is configured as an ESP, it acts as an internal service proxy that mediates communication between services. A typical ESP has <strong>two jobs</strong>:</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-label what">Job 1: inbound mobile routing</div>
+      <p>Mobile request comes from DataPower DMZ → ESP receives it → ESP routes it to the correct WAS server. The ESP is the internal traffic cop deciding which WAS instance handles the request.</p>
+    </div>
+    <div class="card">
+      <div class="card-label how">Job 2: outbound proxy for nodes</div>
+      <p>When a portal cluster node needs to call an external API (credit bureau, payment processor), it doesn't connect to the internet directly. It sends through the ESP, and the ESP makes the outbound call. Nodes never have direct internet access.</p>
+    </div>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="a8" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+      <rect x="240" y="90" width="220" height="56" rx="10" fill="rgba(251,191,36,0.1)" stroke="rgba(251,191,36,0.3)"/>
+      <text x="350" y="114" class="d-text-b" text-anchor="middle" fill="#fbbf24">DataPower ESP</text>
+      <text x="350" y="132" class="d-text-s" text-anchor="middle">Internal service proxy</text>
+
+      <text x="100" y="28" class="d-text-b" fill="#f97066">Job 1: inbound mobile</text>
+      <rect x="40" y="40" width="130" height="40" rx="6" fill="rgba(249,112,102,0.08)" stroke="rgba(249,112,102,0.2)"/>
+      <text x="105" y="58" class="d-text-b" text-anchor="middle" fill="#f97066">DP DMZ</text>
+      <text x="105" y="72" class="d-text-s" text-anchor="middle">Mobile API</text>
+      <path d="M105 80 L105 100 L238 110" fill="none" stroke="rgba(249,112,102,0.4)" stroke-width="1.5" marker-end="url(#a8)"/>
+
+      <rect x="520" y="50" width="140" height="40" rx="6" fill="rgba(96,165,250,0.1)" stroke="rgba(96,165,250,0.2)"/>
+      <text x="590" y="74" class="d-text-b" text-anchor="middle" fill="#60a5fa">WAS servers</text>
+      <path d="M460 106 L518 80" fill="none" stroke="rgba(249,112,102,0.4)" stroke-width="1.5" marker-end="url(#a8)"/>
+      <text x="500" y="100" class="d-text-s" fill="#f97066">routes to</text>
+
+      <text x="100" y="170" class="d-text-b" fill="#34d399">Job 2: outbound proxy</text>
+      <rect x="40" y="184" width="130" height="40" rx="6" fill="rgba(124,107,240,0.08)" stroke="rgba(124,107,240,0.2)"/>
+      <text x="105" y="202" class="d-text-b" text-anchor="middle" fill="#a78bfa">Cluster nodes</text>
+      <text x="105" y="216" class="d-text-s" text-anchor="middle">Need external API</text>
+      <path d="M170 200 L238 138" fill="none" stroke="rgba(52,211,153,0.4)" stroke-width="1.5" marker-end="url(#a8)"/>
+
+      <rect x="520" y="160" width="140" height="40" rx="6" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)"/>
+      <text x="590" y="178" class="d-text-b" text-anchor="middle">External APIs</text>
+      <text x="590" y="192" class="d-text-s" text-anchor="middle">Payment, ID verify</text>
+      <path d="M460 130 L518 172" fill="none" stroke="rgba(52,211,153,0.4)" stroke-width="1.5" marker-end="url(#a8)"/>
+      <text x="500" y="158" class="d-text-s" fill="#34d399">calls out</text>
+
+      <rect x="40" y="240" width="620" height="18" rx="4" fill="rgba(249,112,102,0.05)"/>
+      <text x="350" y="254" class="d-text-s" text-anchor="middle" fill="#f97066">PT note: ESP outbound routing = SSRF surface. If you control the destination parameter, you can pivot internally.</text>
+    </svg>
+    <div class="diagram-cap">ESP dual role: inbound API routing + outbound proxy for cluster nodes</div>
+  </div>
+
+  <div class="scenario">
+    <div class="label life">Restaurant analogy</div>
+    <p>The ESP is the <strong>expediter</strong> (called "the pass" in a professional kitchen). Two jobs: (1) Delivery orders from Uber Eats (mobile API) come to the expediter, who reads the order and assigns it to the right station in the back kitchen (WAS). (2) When a chef (cluster node) needs a special ingredient from an external supplier, the chef doesn't leave the kitchen — they tell the expediter, and the expediter calls the supplier and brings it back. Chefs never leave the kitchen (nodes never touch the internet).</p>
+  </div>
+</div>
+
+<hr>
+
+<!-- ==================== 9. FULL FLOW ==================== -->
+<div class="section" id="fullflow">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2>Complete request flow — both paths</h2>
+  </div>
+
+  <p>Now that you understand every piece, here's how a single request flows through the <strong>entire stack for both entry points</strong>. Two doors, one kitchen, one database.</p>
+
+  <h3 style="color: var(--teal); font-family: var(--serif); font-size: 1.1rem; margin: 24px 0 14px;">Web portal user clicks "View my balance"</h3>
+  <div class="flow-step"><span class="flow-num web">1</span><p>Browser sends HTTPS request to <code>portal.bank.com</code></p></div>
+  <div class="flow-step"><span class="flow-num web">2</span><p><strong>F5 Portal</strong> picks one of 3 <strong>IHS</strong> servers (load balancing)</p></div>
+  <div class="flow-step"><span class="flow-num web">3</span><p><strong>IHS</strong> serves static CSS/JS directly, then the <strong>WebSphere Plugin</strong> reads <code>plugin-cfg.xml</code> and routes the dynamic request to <strong>Cluster C1, Node B</strong></p></div>
+  <div class="flow-step"><span class="flow-num web">4</span><p><strong>Node B</strong> (running WebSphere Portal) loads the account portlet, renders the theme/JSP, and the portlet's action calls the backend via SOAP/REST</p></div>
+  <div class="flow-step"><span class="flow-num web">5</span><p>That service call goes to a <strong>WAS server</strong> which queries the <strong>Database</strong>, gets the balance, returns it</p></div>
+  <div class="flow-step"><span class="flow-num web">6</span><p><strong>Node B</strong> assembles the final HTML page and sends it back through IHS → F5 → browser</p></div>
+
+  <h3 style="color: var(--coral); font-family: var(--serif); font-size: 1.1rem; margin: 30px 0 14px;">Mobile user checks balance in the app</h3>
+  <div class="flow-step"><span class="flow-num api">1</span><p>App sends HTTPS API request to <code>api.bank.com</code></p></div>
+  <div class="flow-step"><span class="flow-num api">2</span><p><strong>F5 API</strong> routes to <strong>DataPower DMZ</strong></p></div>
+  <div class="flow-step"><span class="flow-num api">3</span><p><strong>DP DMZ</strong> terminates SSL, validates auth token, checks JSON schema, runs threat protection</p></div>
+  <div class="flow-step"><span class="flow-num api">4</span><p><strong>DP DMZ</strong> forwards to <strong>DataPower ESP</strong> (internal)</p></div>
+  <div class="flow-step"><span class="flow-num api">5</span><p><strong>ESP</strong> routes to the correct <strong>WAS server</strong></p></div>
+  <div class="flow-step"><span class="flow-num api">6</span><p><strong>WAS</strong> queries the <strong>Database</strong>, processes JSON response, sends it back</p></div>
+  <div class="flow-step"><span class="flow-num api">7</span><p>Response flows back: WAS → ESP → DP DMZ → F5 API → mobile app</p></div>
+
+  <div class="scenario attack" style="margin-top: 30px;">
+    <div class="label atk">Critical insight</div>
+    <p>The mobile path <strong>never touches IHS or the portal nodes</strong>. Completely different entry path, same WAS backend, same database. Two doors, one kitchen. This means you test both paths independently — a vulnerability in the portal path doesn't mean it exists in the API path, and vice versa. The F5s likely have different WAF rules, the authentication mechanisms may differ, and the DataPower pipeline adds a layer the web path doesn't have.</p>
+  </div>
+
+  <div class="ref-list" style="margin-top: 24px;">
+    <a href="https://www.ibm.com/docs/en/was" target="_blank" rel="noopener">WAS documentation</a>
+    <a href="https://www.ibm.com/docs/en/websphere-portal" target="_blank" rel="noopener">Portal documentation</a>
+    <a href="https://www.ibm.com/docs/en/datapower-gateway" target="_blank" rel="noopener">DataPower documentation</a>
+    <a href="https://www.ibm.com/docs/en/was/9.0.5?topic=servers-http-server" target="_blank" rel="noopener">IHS documentation</a>
+    <a href="https://book.hacktricks.wiki/en/network-services-pentesting/pentesting-web/websphere.html" target="_blank" rel="noopener">HackTricks — WebSphere</a>
+  </div>
+</div>
+
+<hr>
+
+<!-- ==================== 10. ENTERPRISE ARCHITECTURE ==================== -->
+<div class="section" id="clientarch">
+  <div class="section-header">
+    <span class="section-num">10</span>
+    <h2>Typical enterprise WebSphere deployment</h2>
+  </div>
+
+  <p>This is the <strong>common topology</strong> you'll see in banks and large enterprises. Toggle between web portal and mobile API flows to see exactly how traffic moves. Tap any component for pentest-relevant details.</p>
+
+  <div class="arch-controls">
+    <button class="arch-btn on" onclick="archFlow('all', event)">Overview</button>
+    <button class="arch-btn" onclick="archFlow('web', event)">Web portal flow</button>
+    <button class="arch-btn" onclick="archFlow('mobile', event)">Mobile API flow</button>
+  </div>
+
+  <div class="diagram-wrap" style="padding:16px;">
+    <svg class="arch-svg" viewBox="0 0 700 660" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="aa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      </defs>
+
+      <rect x="20" y="10" width="660" height="55" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 3"/>
+      <text x="34" y="28" class="zone-tag" fill="rgba(255,255,255,0.25)">Internet</text>
+      <g class="comp" onclick="archInfo('users')">
+        <ellipse cx="200" cy="42" rx="55" ry="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="0.8"/>
+        <text x="200" y="47" class="d-text-s" text-anchor="middle" dominant-baseline="central">Web users</text>
+      </g>
+      <g class="comp" onclick="archInfo('mob_users')">
+        <ellipse cx="500" cy="42" rx="62" ry="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="0.8"/>
+        <text x="500" y="47" class="d-text-s" text-anchor="middle" dominant-baseline="central">Mobile users</text>
+      </g>
+
+      <rect x="20" y="80" width="660" height="72" rx="8" fill="none" stroke="rgba(249,112,102,0.2)" stroke-dasharray="4 3"/>
+      <text x="34" y="97" class="zone-tag" fill="rgba(249,112,102,0.5)">Edge / DMZ</text>
+      <g class="comp" onclick="archInfo('f5_portal')">
+        <rect x="130" y="103" width="140" height="38" rx="6" fill="rgba(96,165,250,0.1)" stroke="rgba(96,165,250,0.3)" stroke-width="0.8"/>
+        <text x="200" y="126" class="d-text-b" text-anchor="middle" dominant-baseline="central" fill="#60a5fa" style="font-size:12px">F5 Portal</text>
+      </g>
+      <g class="comp" onclick="archInfo('f5_api')">
+        <rect x="430" y="103" width="140" height="38" rx="6" fill="rgba(96,165,250,0.1)" stroke="rgba(96,165,250,0.3)" stroke-width="0.8"/>
+        <text x="500" y="126" class="d-text-b" text-anchor="middle" dominant-baseline="central" fill="#60a5fa" style="font-size:12px">F5 API (mobile)</text>
+      </g>
+
+      <rect x="20" y="168" width="340" height="72" rx="8" fill="none" stroke="rgba(52,211,153,0.2)" stroke-dasharray="4 3"/>
+      <text x="34" y="185" class="zone-tag" fill="rgba(52,211,153,0.5)">Web tier (IHS)</text>
+      <g class="comp" onclick="archInfo('ihs')">
+        <rect x="40" y="196" width="90" height="32" rx="6" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.2)" stroke-width="0.8"/>
+        <text x="85" y="216" class="d-text-s" text-anchor="middle" dominant-baseline="central" fill="#34d399">IHS 1</text>
+      </g>
+      <g class="comp" onclick="archInfo('ihs')">
+        <rect x="145" y="196" width="90" height="32" rx="6" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.2)" stroke-width="0.8"/>
+        <text x="190" y="216" class="d-text-s" text-anchor="middle" dominant-baseline="central" fill="#34d399">IHS 2</text>
+      </g>
+      <g class="comp" onclick="archInfo('ihs')">
+        <rect x="250" y="196" width="90" height="32" rx="6" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.2)" stroke-width="0.8"/>
+        <text x="295" y="216" class="d-text-s" text-anchor="middle" dominant-baseline="central" fill="#34d399">IHS 3</text>
+      </g>
+
+      <rect x="390" y="168" width="290" height="72" rx="8" fill="none" stroke="rgba(249,112,102,0.2)" stroke-dasharray="4 3"/>
+      <text x="404" y="185" class="zone-tag" fill="rgba(249,112,102,0.5)">DMZ gateway</text>
+      <g class="comp" onclick="archInfo('dp_dmz')">
+        <rect x="415" y="196" width="240" height="32" rx="6" fill="rgba(249,112,102,0.08)" stroke="rgba(249,112,102,0.2)" stroke-width="0.8"/>
+        <text x="535" y="216" class="d-text-b" text-anchor="middle" dominant-baseline="central" fill="#f97066" style="font-size:12px">DataPower DMZ</text>
+      </g>
+
+      <rect x="20" y="258" width="660" height="220" rx="8" fill="none" stroke="rgba(124,107,240,0.15)" stroke-dasharray="4 3"/>
+      <text x="34" y="276" class="zone-tag" fill="rgba(124,107,240,0.4)">Application tier (internal network)</text>
+
+      <g class="comp" onclick="archInfo('clusters')">
+        <rect x="35" y="290" width="280" height="82" rx="8" fill="rgba(124,107,240,0.06)" stroke="rgba(124,107,240,0.18)" stroke-width="0.8"/>
+        <text x="175" y="308" class="d-text-b" text-anchor="middle" dominant-baseline="central" fill="#a78bfa" style="font-size:11px">WebSphere portal clusters</text>
+        <text x="175" y="324" class="d-text-s" text-anchor="middle" dominant-baseline="central" style="font-size:10px">C1 + C2 per IHS — 3 nodes each</text>
+        <rect x="50" y="336" width="46" height="24" rx="4" fill="rgba(124,107,240,0.1)" stroke="rgba(124,107,240,0.2)" stroke-width="0.5"/>
+        <text x="73" y="352" class="d-text-s" text-anchor="middle" dominant-baseline="central" fill="#a78bfa" style="font-size:9px">C1-A</text>
+        <rect x="102" y="336" width="46" height="24" rx="4" fill="rgba(124,107,240,0.1)" stroke="rgba(124,107,240,0.2)" stroke-width="0.5"/>
+        <text x="125" y="352" class="d-text-s" text-anchor="middle" dominant-baseline="central" fill="#a78bfa" style="font-size:9px">C1-B</text>
+        <rect x="154" y="336" width="46" height="24" rx="4" fill="rgba(124,107,240,0.1)" stroke="rgba(124,107,240,0.2)" stroke-width="0.5"/>
+        <text x="177" y="352" class="d-text-s" text-anchor="middle" dominant-baseline="central" fill="#a78bfa" style="font-size:9px">C1-C</text>
+        <rect x="210" y="336" width="46" height="24" rx="4" fill="rgba(124,107,240,0.15)" stroke="rgba(124,107,240,0.25)" stroke-width="0.5"/>
+        <text x="233" y="352" class="d-text-s" text-anchor="middle" dominant-baseline="central" fill="#a78bfa" style="font-size:9px">C2-A</text>
+        <rect x="262" y="336" width="44" height="24" rx="4" fill="rgba(124,107,240,0.1)" stroke="rgba(124,107,240,0.15)" stroke-width="0.5" stroke-dasharray="2 2"/>
+        <text x="284" y="352" class="d-text-s" text-anchor="middle" dominant-baseline="central" fill="rgba(167,139,250,0.5)" style="font-size:9px">...</text>
+      </g>
+
+      <g class="comp" onclick="archInfo('dp_esp')">
+        <rect x="35" y="390" width="280" height="38" rx="6" fill="rgba(251,191,36,0.08)" stroke="rgba(251,191,36,0.2)" stroke-width="0.8"/>
+        <text x="175" y="413" class="d-text-b" text-anchor="middle" dominant-baseline="central" fill="#fbbf24" style="font-size:12px">DataPower ESP (internal)</text>
+      </g>
+
+      <g class="comp" onclick="archInfo('was')">
+        <rect x="380" y="296" width="280" height="130" rx="8" fill="rgba(96,165,250,0.06)" stroke="rgba(96,165,250,0.18)" stroke-width="0.8"/>
+        <text x="520" y="316" class="d-text-b" text-anchor="middle" dominant-baseline="central" fill="#60a5fa" style="font-size:12px">WAS servers</text>
+        <text x="520" y="334" class="d-text-s" text-anchor="middle" dominant-baseline="central">All backend business logic</text>
+        <rect x="400" y="350" width="74" height="26" rx="4" fill="rgba(96,165,250,0.08)" stroke="rgba(96,165,250,0.15)" stroke-width="0.5"/>
+        <text x="437" y="367" class="d-text-s" text-anchor="middle" dominant-baseline="central" fill="#60a5fa" style="font-size:10px">WAS 1</text>
+        <rect x="483" y="350" width="74" height="26" rx="4" fill="rgba(96,165,250,0.08)" stroke="rgba(96,165,250,0.15)" stroke-width="0.5"/>
+        <text x="520" y="367" class="d-text-s" text-anchor="middle" dominant-baseline="central" fill="#60a5fa" style="font-size:10px">WAS 2</text>
+        <rect x="566" y="350" width="74" height="26" rx="4" fill="rgba(96,165,250,0.08)" stroke="rgba(96,165,250,0.15)" stroke-width="0.5"/>
+        <text x="603" y="367" class="d-text-s" text-anchor="middle" dominant-baseline="central" fill="#60a5fa" style="font-size:10px">WAS 3</text>
+        <rect x="400" y="386" width="240" height="26" rx="4" fill="rgba(96,165,250,0.04)" stroke="rgba(96,165,250,0.1)" stroke-width="0.5"/>
+        <text x="520" y="403" class="d-text-s" text-anchor="middle" dominant-baseline="central" style="font-size:10px">Services, transactions, DAO</text>
+      </g>
+
+      <rect x="20" y="494" width="660" height="68" rx="8" fill="none" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 3"/>
+      <text x="34" y="512" class="zone-tag" fill="rgba(255,255,255,0.2)">Data tier</text>
+      <g class="comp" onclick="archInfo('db')">
+        <rect x="240" y="518" width="220" height="34" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="0.8"/>
+        <text x="350" y="539" class="d-text-b" text-anchor="middle" dominant-baseline="central">Database</text>
+      </g>
+
+      <line class="fp web" x1="200" y1="58" x2="200" y2="101" stroke="#34d399" stroke-width="1.5" marker-end="url(#aa)"/>
+      <path class="fp web" d="M170 141 L85 194" fill="none" stroke="#34d399" stroke-width="1.2" marker-end="url(#aa)"/>
+      <line class="fp web" x1="200" y1="141" x2="190" y2="194" stroke="#34d399" stroke-width="1.2" marker-end="url(#aa)"/>
+      <path class="fp web" d="M230 141 L295 194" fill="none" stroke="#34d399" stroke-width="1.2" marker-end="url(#aa)"/>
+      <line class="fp web" x1="175" y1="228" x2="175" y2="288" stroke="#34d399" stroke-width="1.2" marker-end="url(#aa)"/>
+      <line class="fp shared" x1="315" y1="330" x2="378" y2="362" stroke="#a78bfa" stroke-width="1" marker-end="url(#aa)"/>
+      <text x="356" y="338" class="d-text-s" text-anchor="middle" fill="rgba(167,139,250,0.5)" style="font-size:9px">SOAP/REST</text>
+
+      <line class="fp mobile" x1="500" y1="58" x2="500" y2="101" stroke="#f97066" stroke-width="1.5" marker-end="url(#aa)"/>
+      <line class="fp mobile" x1="500" y1="141" x2="535" y2="194" stroke="#f97066" stroke-width="1.5" marker-end="url(#aa)"/>
+      <path class="fp mobile" d="M460 228 L400 248 L200 388" fill="none" stroke="#f97066" stroke-width="1.5" marker-end="url(#aa)"/>
+      <line class="fp mobile" x1="315" y1="409" x2="378" y2="380" stroke="#f97066" stroke-width="1.5" marker-end="url(#aa)"/>
+      <text x="352" y="402" class="d-text-s" text-anchor="middle" fill="rgba(249,112,102,0.5)" style="font-size:9px">routes</text>
+
+      <line class="fp shared" x1="175" y1="372" x2="175" y2="388" stroke="#a78bfa" stroke-width="1" marker-end="url(#aa)"/>
+      <text x="154" y="382" class="d-text-s" text-anchor="end" fill="rgba(167,139,250,0.4)" style="font-size:9px">outbound</text>
+
+      <path class="fp shared" d="M315 409 L340 409 L340 450 L660 450" fill="none" stroke="#a78bfa" stroke-width="0.8" stroke-dasharray="4 2" marker-end="url(#aa)"/>
+      <text x="560" y="444" class="d-text-s" fill="rgba(167,139,250,0.4)" style="font-size:10px">External APIs</text>
+
+      <path class="fp shared" d="M175 428 L175 450 L300 516" fill="none" stroke="#a78bfa" stroke-width="1" marker-end="url(#aa)"/>
+      <line class="fp shared" x1="520" y1="426" x2="410" y2="516" stroke="#a78bfa" stroke-width="1" marker-end="url(#aa)"/>
+
+      <rect x="20" y="580" width="660" height="66" rx="8" fill="rgba(249,112,102,0.04)" stroke="rgba(249,112,102,0.1)"/>
+      <text x="40" y="600" class="d-text-b" fill="#f97066" style="font-size:11px">Attack surface summary</text>
+      <text x="40" y="618" class="d-text-s" style="font-size:10px">Web path: F5 Portal → IHS (plugin-cfg.xml) → Cluster nodes (portlets, JSP, JSESSIONID) → WAS → DB</text>
+      <text x="40" y="634" class="d-text-s" style="font-size:10px">API path: F5 API → DP DMZ (schema bypass, XXE, auth) → DP ESP (SSRF, routing) → WAS → DB</text>
+    </svg>
+  </div>
+
+  <div class="arch-legend">
+    <span><i style="background:#34d399"></i>Web portal flow</span>
+    <span><i style="background:#f97066"></i>Mobile API flow</span>
+    <span><i style="background:#a78bfa"></i>Shared / internal</span>
+  </div>
+
+  <div class="arch-info" id="archinfo">Tap any component above to see pentest-relevant details.</div>
+
+  <hr style="margin:32px 0">
+
+  <h3 style="color: var(--text); font-family: var(--serif); font-size: 1.2rem; margin-bottom: 16px;">Architecture key points</h3>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-label pt">Two separate entry points</div>
+      <p>F5 Portal (web) and F5 API (mobile) are <strong>completely different F5 instances</strong> — different VIPs, likely different WAF rules, different SSL configs. Test each independently. A bypass on one doesn't mean it exists on the other.</p>
+    </div>
+    <div class="card">
+      <div class="card-label pt">Paths diverge then converge</div>
+      <p>Web traffic goes through IHS → Portal clusters. Mobile goes through DataPower DMZ → ESP. Both paths converge at <strong>WAS servers</strong> and the same <strong>database</strong>. The same SQLi in WAS is reachable from both doors.</p>
+    </div>
+    <div class="card">
+      <div class="card-label pt">DataPower is mobile-only</div>
+      <p>The web portal path <strong>never touches DataPower</strong> (except outbound via ESP). The DataPower pipeline (SSL, auth, schema, threat protection) only sits on the mobile/API path. Web portal traffic bypasses all of those checks.</p>
+    </div>
+    <div class="card">
+      <div class="card-label pt">ESP is the only exit</div>
+      <p>Cluster nodes cannot reach the internet directly. All outbound calls go through DataPower ESP. This is a <strong>security control</strong> but also an SSRF opportunity — if you control what service the ESP calls, you may pivot internally.</p>
+    </div>
+  </div>
+
+  <hr style="margin:32px 0">
+
+  <h3 style="color: var(--text); font-family: var(--serif); font-size: 1.2rem; margin-bottom: 16px;">Pre-engagement questions for the client</h3>
+  <ul>
+    <li>What <strong>WebSphere version and fix pack</strong> are the clusters and WAS running?</li>
+    <li>Is the WAS admin console (<code>/ibm/console</code>) accessible from the testing network?</li>
+    <li>Are DataPower management interfaces (port <code>5550</code> XML mgmt, <code>9090</code> web GUI) in scope?</li>
+    <li>Is <code>plugin-cfg.xml</code> accessible via the web? (common misconfig)</li>
+    <li>Are the two F5s (Portal vs API) configured with different iRules / WAF policies?</li>
+    <li>What authentication does the mobile API path use — OAuth, API keys, mutual TLS?</li>
+    <li>Is DMGR (<code>:9060</code>) reachable from the testing VLAN?</li>
+    <li>Which databases are shared between portal clusters and WAS servers?</li>
+    <li>Are the cluster nodes on the same subnet as WAS servers?</li>
+    <li>Is source code review in scope for the portlet code on the nodes? (the "code viewable" stuff)</li>
+  </ul>
+
+</div>
+
+</div><!-- .page -->
+
+<a href="#topnav" class="btt" title="Back to top" aria-label="Back to top">↑</a>
+
+<script>
+// Active nav highlighting
+const sections = document.querySelectorAll('.section');
+const navLinks = document.querySelectorAll('.nav a[href^="#"]');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const id = entry.target.id;
+      const link = document.querySelector(`.nav a[href="#${id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-80px 0px -70% 0px' });
+sections.forEach(s => observer.observe(s));
+
+// Architecture interactive
+const archInfos = {
+  users: '<b>Web users (browser)</b> — Portal access via browser. Traffic enters through F5 Portal load balancer. This is the standard web application path where WebSphere Portal serves the UI. Test for: session management, CSRF, XSS in portal pages, cookie analysis (JSESSIONID + clone IDs).',
+  mob_users: '<b>Mobile users (app)</b> — Mobile app traffic enters via the separate F5 API. This is your API testing surface. Different F5 = different VIP, possibly different WAF rules. Test for: API auth bypass, JWT/OAuth flaws, rate limiting, different behavior than web path.',
+  f5_portal: '<b>F5 Portal (load balancer)</b> — Distributes web portal traffic across 3 IHS instances. <br><br><b>PT targets:</b> HTTP header injection, <code>X-Forwarded-For</code> trust, persistence cookie manipulation, pool member enumeration, SSL/TLS config differences from F5 API, iRules bypass.',
+  f5_api: '<b>F5 API (mobile load balancer)</b> — Separate F5 instance for mobile/API traffic. Routes to DataPower DMZ, NOT to IHS. <br><br><b>PT targets:</b> API-specific rate limiting, different SSL/TLS config than portal F5, possibly different authentication, iRules bypass, pool enumeration.',
+  ihs: '<b>IBM HTTP Server (IHS) × 3</b> — Apache-based web server with WebSphere Plugin. Serves static content directly (CSS, JS, images). Routes dynamic requests to cluster nodes using <code>plugin-cfg.xml</code>.<br><br><b>PT targets:</b> IHS version disclosure, <code>/plugin-cfg.xml</code> exposure (full internal topology!), <code>mod_rewrite</code> bypasses, default error pages, WebSphere plugin header leaks, path traversal.',
+  dp_dmz: '<b>DataPower DMZ</b> — IBM DataPower Gateway in the DMZ. First stop for ALL mobile/API traffic after F5 API. Runs a full processing policy: SSL termination → authentication → schema validation → threat protection → transformation → routing.<br><br><b>PT targets:</b> Schema validation bypass (malformed JSON/XML), content-type switching (JSON→XML for XXE), XSLT injection, DataPower admin interface exposure (ports 5550/9090), custom error messages leaking backend details, rate limit bypass.',
+  dp_esp: '<b>DataPower ESP (internal)</b> — Enterprise Service Proxy inside the internal network. Two roles: (1) Routes mobile traffic from DMZ DP to WAS servers, (2) Handles outbound calls from cluster nodes to external APIs.<br><br><b>PT targets:</b> Service routing manipulation, backend service discovery via error messages, SSRF through outbound proxy function (if you control destination parameter), internal API enumeration, header injection to manipulate routing decisions.',
+  clusters: '<b>WebSphere Portal clusters</b> — Each IHS maps to 2 clusters (C1, C2). Each cluster has 3 nodes (A, B, C). That\'s potentially 18+ JVMs total. Nodes contain the "viewable code": themes, portlets, JSPs, and actions that call WAS.<br><br><b>PT targets:</b> JSESSIONID + clone IDs (reveals which node you\'re hitting), session affinity/replication manipulation, DMGR admin console (:9060), node agent ports (:8879), WAS console (:9043/:9060), Java deserialization on management ports (CVE-2015-7450), portlet parameter tampering, JSP source disclosure, theme file path traversal.',
+  was: '<b>WAS servers (backend)</b> — All backend business logic lives here. Mobile traffic reaches WAS via: F5 API → DP DMZ → DP ESP → WAS. Web traffic reaches via: IHS → Cluster node → WAS (service call). Both converge here.<br><br><b>PT targets:</b> Application-level vulns (SQLi, XXE, IDOR, auth bypass, mass assignment), EJB remote interfaces, JNDI injection, shared service accounts between portal and API consumers, WAS admin console if exposed, Java deserialization, IIOP/RMI ports (2809).',
+  db: '<b>Database</b> — Accessed by cluster nodes, WAS servers, AND DataPower ESP. All three layers can query the same data.<br><br><b>PT targets:</b> SQL injection from any application layer, connection pooling configs (shared credentials?), different DB accounts from web vs API path (test both!), stored procedure injection, data segregation between portal and mobile consumers, blind SQLi timing differences between paths.'
+};
+function archInfo(key) {
+  document.getElementById('archinfo').innerHTML = archInfos[key] || '';
+}
+function archFlow(mode, ev) {
+  document.querySelectorAll('.arch-btn').forEach(b => b.classList.remove('on'));
+  if (ev && ev.currentTarget) ev.currentTarget.classList.add('on');
+  document.querySelectorAll('.fp').forEach(p => {
+    if (mode === 'all') { p.classList.remove('dim'); p.style.strokeWidth = ''; return; }
+    const isWeb = p.classList.contains('web');
+    const isMobile = p.classList.contains('mobile');
+    if (mode === 'web') {
+      if (isWeb) { p.classList.remove('dim'); p.style.strokeWidth = '2.5px'; }
+      else if (isMobile) { p.classList.add('dim'); p.style.strokeWidth = ''; }
+      else { p.classList.remove('dim'); p.style.strokeWidth = ''; }
+    } else {
+      if (isMobile) { p.classList.remove('dim'); p.style.strokeWidth = '2.5px'; }
+      else if (isWeb) { p.classList.add('dim'); p.style.strokeWidth = ''; }
+      else { p.classList.remove('dim'); p.style.strokeWidth = ''; }
+    }
+  });
+}
+</script>
+
+</body>
+</html>
