@@ -30,7 +30,15 @@ themes and survive the user's manual toggle.
    `100dvh`, never `100vh`. Use `env(safe-area-inset-*)`.
 5. **One `<meta name="theme-color" id="theme-color-meta" …>` only**,
    with that exact id — the boot script keeps it in sync.
-6. After writing the page, **add an entry to `/manifest.json`** (schema
+6. **Sticky headers must clear the iPhone notch.** Any
+   `position: sticky` header/nav uses
+   `top: env(safe-area-inset-top)` — not `top: 0`. Otherwise the
+   status bar / dynamic island overlaps your chips on scroll.
+7. **Chips are pills, not rectangles.** Any section-nav/filter chip
+   uses `border-radius: 999px`, a `var(--bg-raised)` resting fill,
+   and an active state tinted with the page's category accent via
+   `color-mix` (see "Category-accented chip" snippet below).
+8. After writing the page, **add an entry to `/manifest.json`** (schema
    at the bottom).
 
 ## Required `<head>` boilerplate (copy verbatim, fill in `<…>`)
@@ -203,6 +211,56 @@ code {
 }
 ```
 
+## Sticky section nav + category-accented chip (standard shape)
+
+Any page with a top section-nav — like websphere or devsecops — must
+use this shape. `top: env(safe-area-inset-top)` keeps chips out from
+under the iPhone notch; pill chips with category-accent active state
+keep the visual language consistent.
+
+```css
+.navwrap {
+  position: sticky;
+  top: env(safe-area-inset-top);     /* clears iPhone notch */
+  z-index: 30;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin: 14px -20px 22px;            /* bleed to screen edges */
+}
+.navscroll {
+  overflow-x: auto; overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  padding: 9px 20px;
+}
+.navscroll::-webkit-scrollbar { display: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 38px; padding: 7px 13px;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  border-radius: 999px;               /* pill, never sharp */
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  scroll-snap-align: start;
+  transition: transform 0.1s, color 0.15s, background 0.15s, border-color 0.15s;
+}
+.chip:active { transform: scale(0.96); }
+
+/* Active chip — tinted with the page's category accent via color-mix. */
+.chip.active {
+  color: <category accent hex>;
+  border-color: color-mix(in srgb, <category accent hex> 40%, transparent);
+  background:    color-mix(in srgb, <category accent hex> 14%, transparent);
+  filter: var(--accent-filter);
+}
+```
+
 ## How to add light-mode-specific overrides
 
 For any component where the look needs a tweak in light mode (a softer
@@ -321,6 +379,12 @@ Then commit on `main` and push.
       form AND the `:root[data-theme="light"]` form.
 - [ ] No `100vh`. No `position: fixed` that ignores
       `env(safe-area-inset-*)`.
+- [ ] Any `position: sticky` header/nav uses
+      `top: env(safe-area-inset-top)` (not `top: 0`) so it clears
+      the iPhone notch.
+- [ ] Any section-nav chips are pills (`border-radius: 999px`) with
+      the category-accent active state from the chip snippet — no
+      sharp-cornered rectangles.
 - [ ] All interactive elements ≥ 44px.
 - [ ] `manifest.json` updated and JSON-validates.
 - [ ] Shared enhance.js + SW registration block included before `</body>`.
