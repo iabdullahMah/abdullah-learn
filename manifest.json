@@ -87,7 +87,17 @@
   "tags": ["devsecops", "dsovs", "dsomm", "owasp", "cicd", "advisory", "framework"],
   "date": "2026-04-16",
   "interactive": true
+},
+{
+  "slug": "oauth2-attacks",
+  "title": "OAuth 2.0 Attacks",
+  "description": "How delegated authorization works, why every handoff is a trust assumption, and how to break each one.",
+  "category": "auth",
+  "tags": ["oauth", "redirect-uri", "token-theft", "postmessage", "open-redirect", "implicit-flow", "pkce", "csrf", "state-parameter", "oidc"],
+  "date": "2026-04-17",
+  "interactive": false
 }
+
 
   ]
 }
