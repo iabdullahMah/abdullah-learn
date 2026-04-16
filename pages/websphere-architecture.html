@@ -36,7 +36,7 @@
   <link rel="apple-touch-icon" href="/assets/icon-180.png" />
   <link rel="icon" type="image/svg+xml" href="/assets/icon.svg" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/assets/shared.css?v=3" />
+  <link rel="stylesheet" href="/assets/shared.css?v=4" />
 
   <style>
     /* === page-level diagram semantic colors === */
@@ -340,6 +340,15 @@
 
 <h1 class="title">WebSphere Architecture <em>for Pentesters.</em></h1>
 <p class="lead">Every component explained — what it is, how it works, why it exists, and how to attack it. Includes interactive enterprise topology diagram.</p>
+
+<div class="tags">
+  <a class="tag" data-tag="websphere">websphere</a>
+  <a class="tag" data-tag="ibm">ibm</a>
+  <a class="tag" data-tag="java">java</a>
+  <a class="tag" data-tag="enterprise">enterprise</a>
+  <a class="tag" data-tag="architecture">architecture</a>
+  <a class="tag" data-tag="pentest">pentest</a>
+</div>
 
 <!-- ===== NAV ===== -->
 <div class="sticky-nav" id="topnav">
@@ -955,5 +964,15 @@
   }
   </script>
 
+  <script src="https://unpkg.com/prismjs@1.29.0/components/prism-core.min.js"></script>
+  <script src="https://unpkg.com/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+  <script src="/assets/enhance.js?v=1"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () {});
+      });
+    }
+  </script>
 </body>
 </html>

@@ -43,7 +43,7 @@
   <link rel="icon" type="image/svg+xml" href="/assets/icon.svg" />
   <link rel="manifest" href="/manifest.webmanifest" />
 
-  <link rel="stylesheet" href="/assets/shared.css?v=3" />
+  <link rel="stylesheet" href="/assets/shared.css?v=4" />
 
   <style>
     /* ------------------------------------------------------------------ */
@@ -984,7 +984,14 @@
     function App() {
       const [data, setData] = useState(null);
       const [error, setError] = useState(null);
-      const [query, setQuery] = useState('');
+      // Seed query from ?tag= or ?q= so deep links from page tags land
+      // on a pre-filtered index.
+      const [query, setQuery] = useState(() => {
+        try {
+          const sp = new URLSearchParams(window.location.search);
+          return sp.get('tag') || sp.get('q') || '';
+        } catch (e) { return ''; }
+      });
       const [selected, setSelected] = useState(null);
       const searchRef = useRef(null);
 
@@ -1153,6 +1160,15 @@
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
+  </script>
+
+  <script>
+    // Register service worker for offline shell + page caching.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () { /* ignore */ });
+      });
+    }
   </script>
 </body>
 </html>

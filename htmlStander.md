@@ -24,8 +24,8 @@ themes and survive the user's manual toggle.
 2. **Include the theme boot script verbatim** in `<head>` BEFORE
    `<link rel="stylesheet">`. Without it the user's saved theme won't
    apply and the page flashes on load.
-3. **Cache-bust the stylesheet** with `?v=3`:
-   `/assets/shared.css?v=3`.
+3. **Cache-bust the stylesheet** with `?v=4`:
+   `/assets/shared.css?v=4`.
 4. **Mobile first.** Min interactive size 44px (`var(--tap)`). Use
    `100dvh`, never `100vh`. Use `env(safe-area-inset-*)`.
 5. **One `<meta name="theme-color" id="theme-color-meta" …>` only**,
@@ -73,7 +73,7 @@ themes and survive the user's manual toggle.
   <link rel="apple-touch-icon" href="/assets/icon-180.png" />
   <link rel="icon" type="image/svg+xml" href="/assets/icon.svg" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/assets/shared.css?v=3" />
+  <link rel="stylesheet" href="/assets/shared.css?v=4" />
 
   <style>
     /* page-specific CSS — must use var(--*) tokens only */
@@ -252,6 +252,43 @@ React components, no inline `style={{ background: '#fff' }}`. SVG
 diagrams: stroke/fill via `currentColor` or via the accent vars; never
 literal hex.
 
+## Shared enhancements (copy buttons, TOC, tags, Prism, SW)
+
+Every page gets a free upgrade by adding this block just before
+`</body>`. One file, one include — you don't wire anything per-page.
+
+```html
+<script src="https://unpkg.com/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://unpkg.com/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script src="/assets/enhance.js?v=1"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
+</script>
+```
+
+What `enhance.js` auto-wires:
+
+- **Copy buttons** on every `<pre>` (inside `article.page`, `.prose`,
+  or `main`). No per-page HTML needed.
+- **Auto TOC** — add `<nav class="toc"></nav>` anywhere in the article.
+  Built from `<h2>`/`<h3>` inside `article.page`. On desktop you can
+  add the `toc--sticky` class for a sticky sidebar.
+- **Clickable tags** — add a `<div class="tags">` with
+  `<a class="tag" data-tag="foo">foo</a>` entries. Each links to
+  `/?tag=foo` and pre-filters the index.
+- **Prism highlighting** — any `<code class="language-bash">` (or any
+  other language) inside a `<pre>` gets highlighted on load. The theme
+  derives from your page's `--accent` token, so code matches the
+  category color automatically.
+
+The **service worker** (`/sw.js`) caches the shell + visited pages so
+the site works offline after the first visit. Bump `CACHE_VERSION` in
+`/sw.js` when shipping breaking changes.
+
 ## Update `/manifest.json` after writing the page
 
 Add an entry to the `"pages"` array:
@@ -277,7 +314,7 @@ Then commit on `main` and push.
 - [ ] Theme boot script present in `<head>` and unmodified.
 - [ ] `<meta name="theme-color" id="theme-color-meta" …>` present,
       only one.
-- [ ] Stylesheet linked as `/assets/shared.css?v=3`.
+- [ ] Stylesheet linked as `/assets/shared.css?v=4`.
 - [ ] Every colored dot/bar has `filter: var(--accent-filter)`.
 - [ ] Every light-mode override has both the
       `@media (prefers-color-scheme: light) :root:not([data-theme="dark"])`
@@ -286,3 +323,6 @@ Then commit on `main` and push.
       `env(safe-area-inset-*)`.
 - [ ] All interactive elements ≥ 44px.
 - [ ] `manifest.json` updated and JSON-validates.
+- [ ] Shared enhance.js + SW registration block included before `</body>`.
+- [ ] If the page has `<pre>` code blocks, `<code>` inside has a
+      `language-*` class so Prism can highlight.

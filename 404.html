@@ -36,7 +36,7 @@
   <link rel="icon" type="image/svg+xml" href="/assets/icon.svg" />
   <link rel="manifest" href="/manifest.webmanifest" />
 
-  <link rel="stylesheet" href="/assets/shared.css?v=3" />
+  <link rel="stylesheet" href="/assets/shared.css?v=4" />
 
   <style>
     .wrap {
@@ -87,5 +87,13 @@
     <p class="note">this page hasn’t been written yet.</p>
     <a class="home" href="/">← back to index</a>
   </main>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () {});
+      });
+    }
+  </script>
 </body>
 </html>

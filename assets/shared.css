@@ -200,3 +200,182 @@ button:active { background: var(--bg-card-hover); }
 @media (hover: none) {
   .kbd-hint { display: none !important; }
 }
+
+/* --- Copy button on <pre> blocks ---------------------------------------- */
+pre .copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-height: 0;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms linear, color 120ms linear, background 120ms linear;
+}
+pre:hover .copy-btn,
+pre:focus-within .copy-btn { opacity: 1; }
+@media (hover: none) { pre .copy-btn { opacity: 1; } }
+pre .copy-btn:active { background: var(--bg-card-hover); }
+pre .copy-btn.is-copied { color: var(--fg); border-color: var(--border-strong); }
+
+/* --- Auto TOC ---------------------------------------------------------- */
+nav.toc {
+  display: block;
+  margin: 24px 0 32px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+}
+nav.toc .toc-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--fg-subtle);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+nav.toc .toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+nav.toc .toc-list a {
+  display: block;
+  padding: 6px 0;
+  font-size: 14px;
+  color: var(--fg-muted);
+  line-height: 1.4;
+  border-left: 2px solid transparent;
+  padding-left: 10px;
+  margin-left: -10px;
+}
+nav.toc .toc-list a:hover { color: var(--fg); }
+nav.toc .toc-list a.is-active {
+  color: var(--fg);
+  border-left-color: var(--accent, var(--fg-muted));
+}
+nav.toc .toc-l3 { padding-left: 14px; }
+nav.toc .toc-l3 a { font-size: 13px; }
+
+@media (min-width: 1024px) {
+  nav.toc.toc--sticky {
+    position: sticky;
+    top: calc(env(safe-area-inset-top) + 24px);
+    align-self: start;
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+  }
+}
+
+/* --- Clickable tag row ------------------------------------------------- */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 20px;
+}
+.tags a.tag {
+  color: var(--fg-muted);
+  min-height: 28px;
+  line-height: 28px;
+  padding: 0 10px;
+  transition: color 120ms linear, border-color 120ms linear;
+}
+.tags a.tag:hover,
+.tags a.tag:active {
+  color: var(--fg);
+  border-color: var(--border-strong);
+}
+
+/* --- Prism category-accent theme --------------------------------------
+   Every highlightable token picks up tokens from --hl-* below. Pages
+   may override --accent to their category hex; if unset, falls back
+   to --fg so highlighting still reads cleanly.
+------------------------------------------------------------------------ */
+:root {
+  --accent: var(--fg);
+  --hl-keyword:  var(--accent);
+  --hl-string:   var(--fg);
+  --hl-number:   var(--fg);
+  --hl-comment:  var(--fg-subtle);
+  --hl-punct:    var(--fg-muted);
+  --hl-fn:       var(--fg);
+  --hl-var:      var(--fg-muted);
+  --hl-tag:      var(--accent);
+  --hl-attr:     var(--fg);
+}
+
+pre[class*="language-"],
+code[class*="language-"] {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fg);
+  background: var(--bg-card);
+  tab-size: 2;
+  hyphens: none;
+  text-shadow: none;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+}
+pre[class*="language-"] {
+  position: relative;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: auto;
+  margin: 14px 0;
+}
+:not(pre) > code[class*="language-"] {
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata         { color: var(--hl-comment); font-style: italic; }
+.token.punctuation   { color: var(--hl-punct); }
+.token.property,
+.token.constant,
+.token.symbol,
+.token.deleted,
+.token.number,
+.token.boolean       { color: var(--hl-number); }
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted      { color: var(--hl-string); }
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string { color: var(--hl-punct); }
+.token.atrule,
+.token.attr-value,
+.token.keyword       { color: var(--hl-keyword); font-weight: 500; }
+.token.function,
+.token.class-name    { color: var(--hl-fn); }
+.token.regex,
+.token.important,
+.token.variable      { color: var(--hl-var); }
+.token.tag           { color: var(--hl-tag); }
+.token.important,
+.token.bold          { font-weight: 600; }
+.token.italic        { font-style: italic; }
+.token.entity        { cursor: help; }
