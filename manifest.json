@@ -78,6 +78,15 @@
   "tags": ["websphere", "ibm", "java", "enterprise", "architecture", "pentest"],
   "date": "2026-04-16",
   "interactive": true
+},
+    {
+  "slug": "devsecops-advisory-playbook",
+  "title": "DevSecOps Advisory Playbook",
+  "description": "Field guide for security advisors overseeing a DevSecOps gap assessment vendor. Covers DSOVS + DSOMM frameworks, secure CI/CD pipelines, kickoff strategy, and a 100-term reference guide.",
+  "category": "devsecops",
+  "tags": ["devsecops", "dsovs", "dsomm", "owasp", "cicd", "advisory", "framework"],
+  "date": "2026-04-16",
+  "interactive": true
 }
 
   ]
