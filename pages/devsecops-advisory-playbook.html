@@ -8,16 +8,22 @@
 <!-- Theme boot: apply before stylesheet so there's no FOUC -->
 
 <script>
-(function(){
+(function () {
   try {
-    var saved = localStorage.getItem('theme');
-    var sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    var theme = saved || sys;
-    document.documentElement.setAttribute('data-theme', theme);
-    document.documentElement.style.backgroundColor = theme === 'light' ? '#f5f3ee' : '#0a0a0c';
-    var m = document.getElementById('theme-color-meta');
-    if (m) m.setAttribute('content', theme === 'light' ? '#f5f3ee' : '#0a0a0c');
-  } catch(e) {}
+    var stored = localStorage.getItem('theme');
+    var sysLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    var effective = stored || (sysLight ? 'light' : 'dark');
+    var bg = effective === 'light' ? '#f7f5ef' : '#0a0a0c';
+    var root = document.documentElement;
+    if (stored === 'dark' || stored === 'light') {
+      root.setAttribute('data-theme', stored);
+    }
+    root.classList.remove(effective === 'light' ? 'theme-dark'  : 'theme-light');
+    root.classList.add(   effective === 'light' ? 'theme-light' : 'theme-dark');
+    root.style.backgroundColor = bg;
+    var meta = document.getElementById('theme-color-meta');
+    if (meta) meta.setAttribute('content', bg);
+  } catch (e) {}
 })();
 </script>
 
