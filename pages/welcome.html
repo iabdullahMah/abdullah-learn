@@ -7,6 +7,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="learn" />
+  <meta name="theme-color" content="#0a0a0c" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#f7f5ef" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0a0a0c" />
   <meta name="description" content="How abdullah-learn works — what it is, how pages land here, and how to read them." />
 
@@ -65,6 +67,7 @@
     .cat-badge .dot {
       width: 8px; height: 8px; border-radius: 50%;
       background: #84cc16; /* tools accent */
+      filter: var(--accent-filter);
     }
     .date {
       font-family: var(--font-mono);
@@ -183,6 +186,9 @@
       color: var(--fg-muted);
       font-size: 15px;
       line-height: 1.6;
+    }
+    @media (prefers-color-scheme: light) {
+      .callout { border-left-color: #6ba312; }
     }
     .callout strong {
       font-family: var(--font-display);

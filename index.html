@@ -7,6 +7,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="learn" />
+  <meta name="theme-color" content="#0a0a0c" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#f7f5ef" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0a0a0c" />
   <meta name="description" content="abdullah-learn — an offensive security notebook by Ag." />
 
@@ -33,6 +35,9 @@
       backdrop-filter: saturate(140%) blur(10px);
       border-bottom: 1px solid var(--border);
       padding-top: env(safe-area-inset-top);
+    }
+    @media (prefers-color-scheme: light) {
+      .header { background: rgba(247, 245, 239, 0.88); }
     }
 
     .header-inner {
@@ -99,12 +104,12 @@
     .hero h1 {
       font-family: var(--font-display);
       font-weight: 400;
-      line-height: 1.02;
+      line-height: 1.04;
       letter-spacing: -0.01em;
       margin: 0 0 18px;
       color: var(--fg);
       /* clamp so it never overflows two lines on 375px */
-      font-size: clamp(40px, 11vw, 88px);
+      font-size: clamp(38px, 10vw, 84px);
     }
     .hero h1 em {
       font-style: italic;
@@ -119,19 +124,24 @@
 
     .stats {
       display: flex;
-      gap: 22px;
+      gap: 18px;
       flex-wrap: wrap;
       font-family: var(--font-mono);
-      font-size: 12px;
+      font-size: 11px;
       color: var(--fg-subtle);
       letter-spacing: 0.03em;
     }
     .stats .stat strong {
       color: var(--fg);
       font-weight: 500;
-      font-size: 14px;
+      font-size: 13px;
     }
     .stats .stat .label { margin-left: 6px; }
+    /* The third stat (total categories) is redundant on mobile —
+       the chip row below shows every category. Hide it there. */
+    @media (max-width: 767px) {
+      .stats .stat--tertiary { display: none; }
+    }
 
     /* --- search & chips --- */
     .controls {
@@ -180,16 +190,34 @@
       background: var(--bg);
     }
 
+    /* Chip row scrolls horizontally on mobile. Wrap it so we can fade
+       the right edge — that fade is the scroll affordance, instead of a
+       chip getting visually amputated by the viewport. */
+    .chips-wrap {
+      position: relative;
+      /* Pull the scroller out to the container gutter so the trailing
+         chip can slide fully off-screen under the fade. */
+      margin: 0 -24px;
+    }
     .chips {
       display: flex;
       gap: 8px;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       scroll-snap-type: x mandatory;
-      padding: 2px 0 6px;
+      padding: 2px 24px 6px;
       scrollbar-width: none;
     }
     .chips::-webkit-scrollbar { display: none; }
+
+    .chips-wrap::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 0; bottom: 6px;
+      width: 48px;
+      background: linear-gradient(to left, var(--fade-edge-opaque), var(--fade-edge));
+      pointer-events: none;
+    }
 
     .chip {
       flex: 0 0 auto;
@@ -216,6 +244,7 @@
       border-radius: 50%;
       background: var(--chip-accent, var(--fg-subtle));
       flex: 0 0 auto;
+      filter: var(--accent-filter);
     }
     .chip[aria-pressed="true"] {
       color: var(--fg);
@@ -225,16 +254,41 @@
     .chip:active { background: var(--bg-card-hover); }
 
     @media (min-width: 768px) {
+      .chips-wrap { margin: 0; }
       .chips {
         flex-wrap: wrap;
         overflow: visible;
         scroll-snap-type: none;
+        padding: 2px 0 6px;
       }
+      .chips-wrap::after { display: none; }
     }
 
     /* --- category sections --- */
-    .section { padding: 20px 0 8px; }
-    .section + .section { border-top: 1px solid var(--border); margin-top: 12px; }
+    .section { padding: 24px 0 10px; }
+    .section + .section { border-top: 1px solid var(--border); margin-top: 14px; }
+
+    /* When a category has no entries and nothing is filtered, on mobile
+       we collapse the whole section to a single quiet row. It keeps the
+       "shape of the site" visible without eating half a screen. */
+    @media (max-width: 767px) {
+      .section--quiet { padding: 10px 0; }
+      .section--quiet .section-head { margin: 0; gap: 10px; }
+      .section--quiet .section-head h2 {
+        font-family: var(--font-body);
+        font-weight: 500;
+        font-size: 15px;
+        line-height: 1.2;
+        padding-left: 12px;
+      }
+      .section--quiet .section-head h2::before {
+        top: 3px; bottom: 3px; width: 2px;
+      }
+      .section--quiet .section-head .section-meta { font-size: 10px; }
+      .section--quiet .section-blurb { display: none; }
+      .section--quiet .placeholder { display: none; }
+      .section--quiet + .section { margin-top: 10px; }
+    }
 
     .section-head {
       display: flex;
@@ -262,6 +316,7 @@
       width: 2px;
       background: var(--section-accent, var(--fg-subtle));
       border-radius: 2px;
+      filter: var(--accent-filter);
     }
     .section-head .section-meta {
       font-family: var(--font-mono);
@@ -276,6 +331,35 @@
       max-width: 60ch;
       margin: 0 0 18px;
     }
+    /* On mobile, blurbs only show when this category is the selected
+       chip — otherwise they multiply visual weight without adding info. */
+    @media (max-width: 767px) {
+      .section:not(.section--selected) .section-blurb { display: none; }
+    }
+
+    /* Footer link to expand a capped section. Lives inside the section. */
+    .see-all {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: var(--tap);
+      margin-top: 14px;
+      padding: 0 14px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--fg);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+    }
+    .see-all:active { background: var(--bg-card-hover); }
+    .see-all .arrow {
+      font-family: var(--font-body);
+      transition: transform 160ms ease;
+    }
+    .see-all:hover .arrow { transform: translateX(2px); }
 
     .grid {
       display: grid;
@@ -313,6 +397,7 @@
       background: var(--card-accent, var(--fg-subtle));
       transform: translateX(-4px);
       transition: transform 160ms ease;
+      filter: var(--accent-filter);
     }
     .card:active::before,
     .card:focus-visible::before,
@@ -364,6 +449,7 @@
     .card .interactive-badge .dot {
       width: 6px; height: 6px; border-radius: 50%;
       background: var(--card-accent, var(--fg-subtle));
+      filter: var(--accent-filter);
     }
 
     .placeholder {
@@ -468,7 +554,7 @@
           <div className="stats">
             <span className="stat"><strong>{totalPages}</strong><span className="label">explainers</span></span>
             <span className="stat"><strong>{activeCats}</strong><span className="label">active categories</span></span>
-            <span className="stat"><strong>{totalCats}</strong><span className="label">categories total</span></span>
+            <span className="stat stat--tertiary"><strong>{totalCats}</strong><span className="label">categories total</span></span>
           </div>
         </section>
       );
@@ -493,23 +579,25 @@
             />
             <span className="kbd-hint" aria-hidden="true">/</span>
           </div>
-          <div className="chips" role="tablist" aria-label="categories">
-            {categories.map((c) => {
-              const pressed = selected === c.id;
-              return (
-                <button
-                  key={c.id}
-                  className="chip"
-                  role="tab"
-                  aria-pressed={pressed}
-                  style={{ '--chip-accent': c.accent }}
-                  onClick={() => setSelected(pressed ? null : c.id)}
-                >
-                  <span className="dot" aria-hidden="true"></span>
-                  <span>{c.name}</span>
-                </button>
-              );
-            })}
+          <div className="chips-wrap">
+            <div className="chips" role="tablist" aria-label="categories">
+              {categories.map((c) => {
+                const pressed = selected === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    className="chip"
+                    role="tab"
+                    aria-pressed={pressed}
+                    style={{ '--chip-accent': c.accent }}
+                    onClick={() => setSelected(pressed ? null : c.id)}
+                  >
+                    <span className="dot" aria-hidden="true"></span>
+                    <span>{c.name}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </section>
       );
@@ -544,12 +632,25 @@
       );
     }
 
-    function CategorySection({ category, pages, isFiltered }) {
+    // On the overview (no chip selected, no search), cap each category
+    // to this many cards. Selecting the chip expands to full list.
+    const INDEX_CAP = 4;
+
+    function CategorySection({ category, pages, isFiltered, isSelected, onExpand }) {
       const hasPages = pages.length > 0;
+      const isQuiet = !hasPages && !isFiltered;
+      const capped = !isSelected && pages.length > INDEX_CAP
+        ? pages.slice(0, INDEX_CAP)
+        : pages;
+      const hiddenCount = pages.length - capped.length;
+
+      const classes = ['section', 'container'];
+      if (isSelected) classes.push('section--selected');
+      if (isQuiet)   classes.push('section--quiet');
 
       return (
         <section
-          className="section container"
+          className={classes.join(' ')}
           style={{ '--section-accent': category.accent }}
           id={`cat-${category.id}`}
         >
@@ -561,11 +662,23 @@
           </div>
           {category.blurb ? <p className="section-blurb">{category.blurb}</p> : null}
           {hasPages ? (
-            <div className="grid">
-              {pages.map((p) => (
-                <Card key={p.slug} page={p} category={category} />
-              ))}
-            </div>
+            <React.Fragment>
+              <div className="grid">
+                {capped.map((p) => (
+                  <Card key={p.slug} page={p} category={category} />
+                ))}
+              </div>
+              {hiddenCount > 0 ? (
+                <button
+                  className="see-all"
+                  onClick={() => onExpand(category.id)}
+                  aria-label={`see all ${pages.length} entries in ${category.name}`}
+                >
+                  <span>see all {pages.length}</span>
+                  <span className="arrow" aria-hidden="true">→</span>
+                </button>
+              ) : null}
+            </React.Fragment>
           ) : !isFiltered ? (
             <div className="placeholder">— awaiting first entry —</div>
           ) : null}
@@ -700,6 +813,15 @@
                 category={c}
                 pages={pagesByCat[c.id] || []}
                 isFiltered={isFiltered}
+                isSelected={selected === c.id}
+                onExpand={(id) => {
+                  setSelected(id);
+                  // Take the user to the top of the expanded section.
+                  requestAnimationFrame(() => {
+                    const el = document.getElementById(`cat-${id}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  });
+                }}
               />
             ))
           )}
