@@ -1776,26 +1776,36 @@ function Glossary() {
     setCatFilter("all");
     setHlId(id);
 
-    // Wait for layout to settle, then scroll with an offset that accounts
-    // for the sticky section nav + sticky glossary search bar.
+    // Cancel any in-flight smooth scrolls from section-change by doing an
+    // instant jump to current position first, then wait for layout to settle
+    // (search clear, filter reset, DOM commit), then smooth-scroll to the term.
+    let raf1, raf2;
     const t1 = setTimeout(() => {
-      const el = refs.current[id];
-      if (el) {
-        // Compute combined sticky header height dynamically
-        const navwrap = document.querySelector(".navwrap");
-        const gsearch = document.querySelector(".g-search-wrap");
-        const navH = navwrap ? navwrap.getBoundingClientRect().height : 0;
-        const gH   = gsearch ? gsearch.getBoundingClientRect().height : 0;
-        const offset = navH + gH + 16; // breathing room
-        const rect = el.getBoundingClientRect();
-        const targetY = window.scrollY + rect.top - offset;
-        window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
-      }
-      nav.clearPendingTerm();
-    }, 120);
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => {
+          const el = refs.current[id];
+          if (el) {
+            const navwrap = document.querySelector(".navwrap");
+            const gsearch = document.querySelector(".g-search-wrap");
+            const navH = navwrap ? navwrap.getBoundingClientRect().height : 0;
+            const gH   = gsearch ? gsearch.getBoundingClientRect().height : 0;
+            const offset = navH + gH + 16;
+            const rect = el.getBoundingClientRect();
+            const targetY = window.scrollY + rect.top - offset;
+            window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
+          }
+          nav.clearPendingTerm();
+        });
+      });
+    }, 150);
 
-    const t2 = setTimeout(() => setHlId(null), 3000);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const t2 = setTimeout(() => setHlId(null), 3200);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
   }, [nav && nav.pendingTermId]);
 
   const cats = useMemo(() => {
@@ -1899,21 +1909,25 @@ function Glossary() {
 function App() {
   const [active, setActive] = useState("foundations");
   const [pendingTermId, setPendingTermId] = useState(null);
+  const pendingRef = useRef(null); // mirror of pendingTermId that doesn't trigger effects
   const mainRef = useRef(null);
 
   const goToTerm = useCallback(id => {
+    pendingRef.current = id;
     setPendingTermId(id);
     setActive("glossary");
   }, []);
-  const clearPendingTerm = useCallback(() => setPendingTermId(null), []);
+  const clearPendingTerm = useCallback(() => {
+    pendingRef.current = null;
+    setPendingTermId(null);
+  }, []);
 
   useEffect(() => {
-    // Don't scroll-to-top when a term jump is in progress — Glossary handles it
-    if (pendingTermId) return;
-    if (mainRef.current) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [active, pendingTermId]);
+    // Only scroll-to-top when switching sections WITHOUT a pending term jump.
+    // Read from ref so that clearing pendingTermId later does NOT retrigger this.
+    if (pendingRef.current) return;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [active]);
 
   const nav = useMemo(() => ({ goToTerm, pendingTermId, clearPendingTerm }), [goToTerm, pendingTermId, clearPendingTerm]);
 
