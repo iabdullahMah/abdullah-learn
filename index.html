@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="learn" />
+  <meta name="theme-color" content="#0a0a0c" />
+  <meta name="description" content="abdullah-learn — an offensive security notebook by Ag." />
+
+  <title>abdullah-learn</title>
+
+  <link rel="apple-touch-icon" href="/assets/icon-180.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="/assets/icon.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+
+  <link rel="stylesheet" href="/assets/shared.css" />
+
+  <style>
+    /* ------------------------------------------------------------------ */
+    /* index-specific styles. Mobile-first; desktop enhancements via MQ.  */
+    /* ------------------------------------------------------------------ */
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(10, 10, 12, 0.88);
+      -webkit-backdrop-filter: saturate(140%) blur(10px);
+      backdrop-filter: saturate(140%) blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding-top: env(safe-area-inset-top);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: var(--tap);
+      padding: 10px 0;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: var(--tap);
+      color: var(--fg);
+      font-family: var(--font-display);
+      font-size: 22px;
+      letter-spacing: 0.01em;
+    }
+
+    .brand .mark {
+      position: relative;
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--fg);
+    }
+    .brand .mark::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1px solid var(--fg);
+      opacity: 0;
+      animation: pulse 2.8s ease-out infinite;
+    }
+    @keyframes pulse {
+      0%   { opacity: 0.6; transform: scale(0.6); }
+      70%  { opacity: 0; transform: scale(1.6); }
+      100% { opacity: 0; transform: scale(1.6); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .brand .mark::after { animation: none; }
+    }
+
+    .brand em {
+      font-style: italic;
+      color: var(--fg);
+    }
+
+    .header-meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-subtle);
+      text-transform: lowercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* --- hero --- */
+    .hero { padding: 40px 0 24px; }
+
+    .hero h1 {
+      font-family: var(--font-display);
+      font-weight: 400;
+      line-height: 1.02;
+      letter-spacing: -0.01em;
+      margin: 0 0 18px;
+      color: var(--fg);
+      /* clamp so it never overflows two lines on 375px */
+      font-size: clamp(40px, 11vw, 88px);
+    }
+    .hero h1 em {
+      font-style: italic;
+      color: var(--fg);
+    }
+    .hero p.lead {
+      color: var(--fg-muted);
+      font-size: 16px;
+      max-width: 62ch;
+      margin: 0 0 22px;
+    }
+
+    .stats {
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--fg-subtle);
+      letter-spacing: 0.03em;
+    }
+    .stats .stat strong {
+      color: var(--fg);
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .stats .stat .label { margin-left: 6px; }
+
+    /* --- search & chips --- */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 6px 0 18px;
+    }
+
+    .search {
+      position: relative;
+    }
+    .search input {
+      width: 100%;
+      min-height: var(--tap);
+      padding: 12px 42px 12px 14px;
+      background: var(--bg-raised);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: var(--font-body);
+      /* ≥16px — prevents iOS auto-zoom on focus */
+      font-size: 16px;
+      line-height: 1.4;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .search input::placeholder { color: var(--fg-subtle); }
+    .search input:focus {
+      outline: none;
+      border-color: var(--border-strong);
+      background: var(--bg-card);
+    }
+    .search .kbd-hint {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      pointer-events: none;
+      background: var(--bg);
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
+      padding: 2px 0 6px;
+      scrollbar-width: none;
+    }
+    .chips::-webkit-scrollbar { display: none; }
+
+    .chip {
+      flex: 0 0 auto;
+      scroll-snap-align: start;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: var(--tap);
+      padding: 0 14px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--fg-muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+    }
+    .chip .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--chip-accent, var(--fg-subtle));
+      flex: 0 0 auto;
+    }
+    .chip[aria-pressed="true"] {
+      color: var(--fg);
+      border-color: var(--border-strong);
+      background: var(--bg-card);
+    }
+    .chip:active { background: var(--bg-card-hover); }
+
+    @media (min-width: 768px) {
+      .chips {
+        flex-wrap: wrap;
+        overflow: visible;
+        scroll-snap-type: none;
+      }
+    }
+
+    /* --- category sections --- */
+    .section { padding: 20px 0 8px; }
+    .section + .section { border-top: 1px solid var(--border); margin-top: 12px; }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 0 14px;
+    }
+    .section-head h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: clamp(26px, 6vw, 36px);
+      letter-spacing: -0.005em;
+      line-height: 1.15;
+      position: relative;
+      padding-left: 14px;
+    }
+    .section-head h2::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 10px;
+      bottom: 10px;
+      width: 2px;
+      background: var(--section-accent, var(--fg-subtle));
+      border-radius: 2px;
+    }
+    .section-head .section-meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-subtle);
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .section-blurb {
+      color: var(--fg-muted);
+      font-size: 14px;
+      max-width: 60ch;
+      margin: 0 0 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 768px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    }
+    @media (min-width: 1100px) {
+      .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    }
+
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 160px;
+      padding: 18px 18px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--fg);
+      overflow: hidden;
+      transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--card-accent, var(--fg-subtle));
+      transform: translateX(-4px);
+      transition: transform 160ms ease;
+    }
+    .card:active::before,
+    .card:focus-visible::before,
+    .card:hover::before { transform: translateX(0); }
+    .card:active,
+    .card:hover { background: var(--bg-card-hover); border-color: var(--border-strong); }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: 22px;
+      line-height: 1.2;
+      letter-spacing: -0.005em;
+    }
+    .card p {
+      margin: 0 0 14px;
+      color: var(--fg-muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .card .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: auto;
+    }
+    .card .date {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-subtle);
+      letter-spacing: 0.03em;
+    }
+    .card .interactive-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 22px;
+      padding: 0 8px;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--fg);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .card .interactive-badge .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--card-accent, var(--fg-subtle));
+    }
+
+    .placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
+      padding: 24px;
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius);
+      color: var(--fg-subtle);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-align: center;
+    }
+
+    .empty-search {
+      padding: 32px 16px;
+      text-align: center;
+      color: var(--fg-muted);
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+
+    /* --- footer --- */
+    .footer {
+      margin-top: 40px;
+      padding: 28px 0 48px;
+      border-top: 1px solid var(--border);
+      color: var(--fg-subtle);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+    }
+    .footer em { font-family: var(--font-display); font-style: italic; color: var(--fg-muted); }
+
+    /* --- loading state --- */
+    .boot {
+      padding: 80px 20px;
+      color: var(--fg-subtle);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="root">
+    <div class="boot">loading notebook…</div>
+  </div>
+
+  <!-- React 18 + Babel Standalone (in-browser JSX transpile). No build step. -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel" data-presets="react">
+    const { useEffect, useMemo, useRef, useState } = React;
+
+    function formatDate(iso) {
+      if (!iso) return '';
+      // Keep it ISO-ish so it looks technical. No locale drift.
+      return iso;
+    }
+
+    function Header({ updated }) {
+      return (
+        <header className="header">
+          <div className="container header-inner">
+            <a className="brand" href="/" aria-label="abdullah-learn home">
+              <span className="mark" aria-hidden="true"></span>
+              <span>abdullah<em>-learn</em></span>
+            </a>
+            <span className="header-meta">
+              {updated ? `updated ${updated}` : ''}
+            </span>
+          </div>
+        </header>
+      );
+    }
+
+    function Hero({ data }) {
+      const totalPages = data.pages.length;
+      const activeCats = new Set(data.pages.map((p) => p.category)).size;
+      const totalCats = data.categories.length;
+
+      return (
+        <section className="hero container">
+          <h1>
+            Notes from <em>the</em> attack<br/>surface.
+          </h1>
+          <p className="lead">
+            {data.tagline || 'An offensive security notebook.'} Scroll, search, tap.
+            Pages land here when Ag asks Jarvis to write one.
+          </p>
+          <div className="stats">
+            <span className="stat"><strong>{totalPages}</strong><span className="label">explainers</span></span>
+            <span className="stat"><strong>{activeCats}</strong><span className="label">active categories</span></span>
+            <span className="stat"><strong>{totalCats}</strong><span className="label">categories total</span></span>
+          </div>
+        </section>
+      );
+    }
+
+    function Controls({ query, setQuery, selected, setSelected, categories, searchRef }) {
+      return (
+        <section className="controls container" aria-label="filter and search">
+          <div className="search">
+            <input
+              ref={searchRef}
+              type="search"
+              inputMode="search"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
+              placeholder="search titles, tags, categories…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="search"
+            />
+            <span className="kbd-hint" aria-hidden="true">/</span>
+          </div>
+          <div className="chips" role="tablist" aria-label="categories">
+            {categories.map((c) => {
+              const pressed = selected === c.id;
+              return (
+                <button
+                  key={c.id}
+                  className="chip"
+                  role="tab"
+                  aria-pressed={pressed}
+                  style={{ '--chip-accent': c.accent }}
+                  onClick={() => setSelected(pressed ? null : c.id)}
+                >
+                  <span className="dot" aria-hidden="true"></span>
+                  <span>{c.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      );
+    }
+
+    function Card({ page, category }) {
+      return (
+        <a
+          className="card"
+          href={`/pages/${page.slug}.html`}
+          style={{ '--card-accent': category ? category.accent : 'var(--fg-subtle)' }}
+        >
+          <div>
+            <h3>{page.title}</h3>
+            {page.description ? <p>{page.description}</p> : null}
+          </div>
+          <div className="card-meta">
+            <span className="date">{formatDate(page.date)}</span>
+            {Array.isArray(page.tags)
+              ? page.tags.slice(0, 3).map((t) => (
+                  <span key={t} className="tag">#{t}</span>
+                ))
+              : null}
+            {page.interactive ? (
+              <span className="interactive-badge" title="interactive page">
+                <span className="dot" aria-hidden="true"></span>
+                interactive
+              </span>
+            ) : null}
+          </div>
+        </a>
+      );
+    }
+
+    function CategorySection({ category, pages, isFiltered }) {
+      const hasPages = pages.length > 0;
+
+      return (
+        <section
+          className="section container"
+          style={{ '--section-accent': category.accent }}
+          id={`cat-${category.id}`}
+        >
+          <div className="section-head">
+            <h2>{category.name}</h2>
+            <span className="section-meta">
+              {hasPages ? `${pages.length} ${pages.length === 1 ? 'entry' : 'entries'}` : 'empty'}
+            </span>
+          </div>
+          {category.blurb ? <p className="section-blurb">{category.blurb}</p> : null}
+          {hasPages ? (
+            <div className="grid">
+              {pages.map((p) => (
+                <Card key={p.slug} page={p} category={category} />
+              ))}
+            </div>
+          ) : !isFiltered ? (
+            <div className="placeholder">— awaiting first entry —</div>
+          ) : null}
+        </section>
+      );
+    }
+
+    function Footer({ owner }) {
+      return (
+        <footer className="footer container">
+          <span>© {new Date().getFullYear()} {owner || 'Ag'} — a personal notebook</span>
+          <span><em>built by Jarvis, read by Ag</em></span>
+        </footer>
+      );
+    }
+
+    function App() {
+      const [data, setData] = useState(null);
+      const [error, setError] = useState(null);
+      const [query, setQuery] = useState('');
+      const [selected, setSelected] = useState(null);
+      const searchRef = useRef(null);
+
+      useEffect(() => {
+        let alive = true;
+        fetch('/manifest.json', { cache: 'no-cache' })
+          .then((r) => {
+            if (!r.ok) throw new Error(`manifest http ${r.status}`);
+            return r.json();
+          })
+          .then((j) => { if (alive) setData(j); })
+          .catch((e) => { if (alive) setError(e.message || String(e)); });
+        return () => { alive = false; };
+      }, []);
+
+      // Keyboard shortcuts — desktop only. On touch devices these events
+      // essentially never fire, but we also guard with hover: none CSS.
+      useEffect(() => {
+        function onKey(e) {
+          const tag = (e.target && e.target.tagName) || '';
+          const typing = tag === 'INPUT' || tag === 'TEXTAREA';
+          if (e.key === '/' && !typing) {
+            e.preventDefault();
+            if (searchRef.current) searchRef.current.focus();
+          } else if (e.key === 'Escape') {
+            if (typing) searchRef.current && searchRef.current.blur();
+            setQuery('');
+            setSelected(null);
+          }
+        }
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+      }, []);
+
+      const categoryById = useMemo(() => {
+        if (!data) return {};
+        const m = {};
+        data.categories.forEach((c) => { m[c.id] = c; });
+        return m;
+      }, [data]);
+
+      const filteredPages = useMemo(() => {
+        if (!data) return [];
+        const q = query.trim().toLowerCase();
+        return data.pages.filter((p) => {
+          if (selected && p.category !== selected) return false;
+          if (!q) return true;
+          const hay = [
+            p.title || '',
+            p.description || '',
+            p.category || '',
+            (p.tags || []).join(' '),
+          ].join(' ').toLowerCase();
+          return hay.includes(q);
+        });
+      }, [data, query, selected]);
+
+      if (error) {
+        return (
+          <main>
+            <Header updated="" />
+            <div className="container boot">
+              couldn’t load manifest: <code>{error}</code>
+            </div>
+          </main>
+        );
+      }
+
+      if (!data) {
+        return (
+          <main>
+            <div className="boot">loading notebook…</div>
+          </main>
+        );
+      }
+
+      const isFiltered = Boolean(query.trim() || selected);
+
+      // Group filtered pages by category, preserving category order.
+      const pagesByCat = {};
+      data.categories.forEach((c) => { pagesByCat[c.id] = []; });
+      filteredPages.forEach((p) => {
+        if (pagesByCat[p.category]) pagesByCat[p.category].push(p);
+      });
+
+      const visibleCats = selected
+        ? data.categories.filter((c) => c.id === selected)
+        : data.categories;
+
+      const nothingMatches = isFiltered && filteredPages.length === 0;
+
+      return (
+        <main>
+          <Header updated={data.updated} />
+          <Hero data={data} />
+          <Controls
+            query={query}
+            setQuery={setQuery}
+            selected={selected}
+            setSelected={setSelected}
+            categories={data.categories}
+            searchRef={searchRef}
+          />
+          {nothingMatches ? (
+            <div className="container empty-search">
+              nothing matches “{query}”{selected ? ` in ${categoryById[selected].name}` : ''}.
+            </div>
+          ) : (
+            visibleCats.map((c) => (
+              <CategorySection
+                key={c.id}
+                category={c}
+                pages={pagesByCat[c.id] || []}
+                isFiltered={isFiltered}
+              />
+            ))
+          )}
+          <Footer owner={data.owner} />
+        </main>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

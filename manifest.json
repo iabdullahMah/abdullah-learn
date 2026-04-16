@@ -1,0 +1,73 @@
+{
+  "title": "abdullah-learn",
+  "tagline": "Notes from the attack surface. Written by Jarvis for Ag.",
+  "owner": "Ag",
+  "updated": "2026-04-16",
+  "categories": [
+    {
+      "id": "web",
+      "name": "Web Exploitation",
+      "accent": "#ff4d5e",
+      "blurb": "XSS, SQLi, CRLF, SSRF, open redirect, deserialization, and the rest of the OWASP workhorses."
+    },
+    {
+      "id": "api",
+      "name": "API Security",
+      "accent": "#22d3ee",
+      "blurb": "REST and GraphQL attack surface. BOLA, BFLA, mass assignment, rate limit abuse."
+    },
+    {
+      "id": "auth",
+      "name": "Auth & Sessions",
+      "accent": "#f5b544",
+      "blurb": "JWT, OAuth, SAML, SSO, cookies, and the many ways session state breaks."
+    },
+    {
+      "id": "mobile",
+      "name": "Mobile Security",
+      "accent": "#a78bfa",
+      "blurb": "iOS and Android runtime attacks, Frida, objection, jailbreak and root detection bypass."
+    },
+    {
+      "id": "review",
+      "name": "Source Code Review",
+      "accent": "#2dd4bf",
+      "blurb": "White-box patterns, language-specific sinks, and reading code faster than the developer did."
+    },
+    {
+      "id": "enterprise",
+      "name": "Enterprise Architectures",
+      "accent": "#5b8def",
+      "blurb": "IBM stack: WebSphere, DataPower. F5, WAFs, DMZ patterns, and how banks actually wire things."
+    },
+    {
+      "id": "tools",
+      "name": "Tools & Tradecraft",
+      "accent": "#84cc16",
+      "blurb": "Burp workflows, sqlmap tuning, proxy chains, WAF bypass, the craft behind the findings."
+    },
+    {
+      "id": "hardware",
+      "name": "Hardware & IoT",
+      "accent": "#f97316",
+      "blurb": "UART, SPI, JTAG, BLE, firmware extraction, and what the silicon is hiding."
+    },
+    {
+      "id": "devsecops",
+      "name": "DevSecOps",
+      "accent": "#ec4899",
+      "blurb": "CI/CD pipelines, secrets, container escapes, IaC, and shifting left without falling over."
+    }
+  ],
+  "pages": [
+    {
+      "slug": "welcome",
+      "title": "How this site works",
+      "description": "What abdullah-learn is, how pages get here, and how to read them.",
+      "category": "tools",
+      "tags": ["meta", "workflow"],
+      "date": "2026-04-16",
+      "interactive": false
+    }
+  ]
+}

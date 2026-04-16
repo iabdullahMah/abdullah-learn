@@ -1,0 +1,42 @@
+[Unit]
+Description=abdullah-learn GitHub webhook (git pull on push)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=learndeploy
+Group=learndeploy
+WorkingDirectory=/opt/learn
+EnvironmentFile=/etc/learn-webhook.env
+ExecStart=/usr/bin/python3 /opt/learn-webhook/webhook.py
+Restart=on-failure
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=learn-webhook
+
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+ReadWritePaths=/opt/learn
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LimitNOFILE=1024
+TasksMax=32
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="learn" />
+  <meta name="theme-color" content="#0a0a0c" />
+  <meta name="description" content="How abdullah-learn works — what it is, how pages land here, and how to read them." />
+
+  <title>How this site works — abdullah-learn</title>
+
+  <link rel="apple-touch-icon" href="/assets/icon-180.png" />
+  <link rel="icon" type="image/svg+xml" href="/assets/icon.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+
+  <link rel="stylesheet" href="/assets/shared.css" />
+
+  <style>
+    .page {
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 20px 64px;
+    }
+
+    @media (min-width: 768px) {
+      .page { padding: 40px 32px 80px; }
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--tap);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--fg-muted);
+      letter-spacing: 0.03em;
+    }
+    .back:active { color: var(--fg); }
+
+    .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 20px 0 14px;
+    }
+
+    .cat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 24px;
+      padding: 0 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg);
+      letter-spacing: 0.04em;
+      text-transform: lowercase;
+    }
+    .cat-badge .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #84cc16; /* tools accent */
+    }
+    .date {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-subtle);
+      letter-spacing: 0.04em;
+    }
+
+    h1.title {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: clamp(36px, 9vw, 64px);
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+      margin: 6px 0 22px;
+      color: var(--fg);
+    }
+    h1.title em { font-style: italic; }
+
+    p.lead {
+      font-size: 17px;
+      color: var(--fg);
+      margin: 0 0 22px;
+    }
+
+    h2 {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: clamp(22px, 5vw, 30px);
+      letter-spacing: -0.005em;
+      color: var(--fg);
+      margin: 36px 0 10px;
+    }
+
+    p {
+      color: var(--fg-muted);
+      font-size: 16px;
+      line-height: 1.65;
+      margin: 0 0 14px;
+    }
+
+    ol.flow {
+      list-style: none;
+      counter-reset: step;
+      padding: 0;
+      margin: 14px 0 0;
+      border-top: 1px solid var(--border);
+    }
+    ol.flow li {
+      counter-increment: step;
+      padding: 16px 0 16px 44px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      color: var(--fg-muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    ol.flow li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 16px;
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border-strong);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--fg);
+    }
+    ol.flow li strong {
+      color: var(--fg);
+      font-weight: 500;
+    }
+    ol.flow li code {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: var(--fg);
+    }
+
+    ul.cats {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 18px;
+    }
+    ul.cats li {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 15px;
+      color: var(--fg-muted);
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+    ul.cats li strong {
+      color: var(--fg);
+      font-weight: 500;
+      min-width: 12ch;
+      display: inline-block;
+    }
+
+    .callout {
+      margin: 32px 0;
+      padding: 18px 20px;
+      border: 1px solid var(--border);
+      border-left: 2px solid #84cc16;
+      border-radius: var(--radius-sm);
+      background: var(--bg-raised);
+      color: var(--fg-muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .callout strong {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 400;
+      color: var(--fg);
+      font-size: 18px;
+    }
+
+    .mobile-tip {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--fg-subtle);
+      letter-spacing: 0.02em;
+      margin: 12px 0 0;
+    }
+  </style>
+</head>
+<body>
+  <article class="page">
+    <a class="back" href="/">← back to index</a>
+
+    <div class="meta-row">
+      <span class="cat-badge"><span class="dot" aria-hidden="true"></span>tools &amp; tradecraft</span>
+      <span class="date">2026-04-16</span>
+    </div>
+
+    <h1 class="title">How this <em>site</em> works.</h1>
+
+    <p class="lead">
+      <strong>abdullah-learn</strong> is Ag’s personal offensive-security notebook.
+      Every page here was written to answer a specific question, usually
+      after something surprising showed up in a pentest. No textbooks, no
+      theory for theory’s sake — just the parts worth remembering.
+    </p>
+
+    <h2>What lives here</h2>
+    <p>
+      Short, opinionated explainers on web, API, auth, mobile, code review,
+      enterprise architecture, tools, hardware, and DevSecOps. If a topic
+      isn’t here yet, it hasn’t come up. When it does, Jarvis writes it up
+      and it lands on the next push.
+    </p>
+
+    <h2>How a page gets here</h2>
+    <ol class="flow">
+      <li><strong>Question.</strong> You ask Jarvis to explain something.</li>
+      <li><strong>Page built.</strong> Jarvis writes an HTML file under <code>/pages/</code> and updates <code>manifest.json</code> in the same commit.</li>
+      <li><strong>Push to GitHub.</strong></li>
+      <li><strong>Penforge pulls.</strong> Webhook verifies signature, runs <code>git pull --ff-only</code>.</li>
+      <li><strong>Index updates.</strong> Reads manifest on load, no extra work.</li>
+    </ol>
+
+    <h2>How to read it</h2>
+    <p>Nine categories, stable order:</p>
+    <ul class="cats">
+      <li><strong>web</strong> XSS, SQLi, SSRF, the OWASP workhorses.</li>
+      <li><strong>api</strong> REST &amp; GraphQL: BOLA, BFLA, mass assignment.</li>
+      <li><strong>auth</strong> JWT, OAuth, SAML, session mechanics.</li>
+      <li><strong>mobile</strong> iOS / Android runtime attacks, Frida, objection.</li>
+      <li><strong>review</strong> White-box reading, language sinks.</li>
+      <li><strong>enterprise</strong> WebSphere, DataPower, F5, WAFs, DMZ.</li>
+      <li><strong>tools</strong> Burp, sqlmap, proxy chains, WAF bypass.</li>
+      <li><strong>hardware</strong> UART, SPI, JTAG, BLE, firmware.</li>
+      <li><strong>devsecops</strong> CI/CD, secrets, container escapes, IaC.</li>
+    </ul>
+
+    <p class="mobile-tip">
+      mobile tip: tap a chip to filter; tap it again to clear. pages marked
+      “interactive” have clickable diagrams.
+    </p>
+
+    <div class="callout">
+      <p><strong>This is a notebook, not a reference.</strong></p>
+      <p style="margin:0;">
+        Entries are opinionated, abbreviated, and reflect one person’s
+        working memory. If something looks wrong or out of date, it
+        probably is — and it stays wrong until Ag hits it again in the
+        field.
+      </p>
+    </div>
+
+    <a class="back" href="/">← back to index</a>
+  </article>
+</body>
+</html>

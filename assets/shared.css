@@ -1,0 +1,122 @@
+/* abdullah-learn — shared design tokens and base styles.
+   Mobile-first. iPhone Safari is the primary target. */
+
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0a0a0c;
+  --bg-raised: #111114;
+  --bg-card: #14141a;
+  --bg-card-hover: #1a1a22;
+  --border: #24242d;
+  --border-strong: #32323f;
+
+  --fg: #eceae4;
+  --fg-muted: #a1a0a0;
+  --fg-subtle: #6b6b73;
+
+  --font-display: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+  --font-body:    'Geist', -apple-system, system-ui, sans-serif;
+  --font-mono:    'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+
+  --tap: 44px;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(255,255,255,0.04), transparent 60%),
+    radial-gradient(800px 400px at 90% 20%, rgba(120,80,200,0.045), transparent 60%),
+    var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
+
+  padding-top:    env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left:   env(safe-area-inset-left);
+  padding-right:  env(safe-area-inset-right);
+
+  overflow-x: hidden;
+}
+
+a { color: var(--fg); text-decoration: none; }
+a:focus-visible { outline: 2px solid var(--fg-muted); outline-offset: 2px; border-radius: 2px; }
+
+::selection { background: #2b2b36; color: var(--fg); }
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+@media (min-width: 768px) {
+  .container { padding: 0 32px; }
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+hr.divider {
+  border: 0;
+  height: 1px;
+  background: var(--border);
+  margin: 32px 0;
+}
+
+.mono { font-family: var(--font-mono); }
+.serif { font-family: var(--font-display); }
+.italic { font-style: italic; }
+
+/* Ensure all interactive bits clear 44px on touch. */
+button,
+input,
+a.button {
+  min-height: var(--tap);
+  font-family: inherit;
+}
+
+button {
+  background: transparent;
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+button:active { background: var(--bg-card-hover); }
+
+/* Hide things that only make sense with a keyboard + pointer. */
+@media (hover: none) {
+  .kbd-hint { display: none !important; }
+}
