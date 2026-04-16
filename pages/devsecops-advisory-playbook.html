@@ -1775,12 +1775,26 @@ function Glossary() {
     setSearch("");
     setCatFilter("all");
     setHlId(id);
-    nav.clearPendingTerm();
+
+    // Wait for layout to settle, then scroll with an offset that accounts
+    // for the sticky section nav + sticky glossary search bar.
     const t1 = setTimeout(() => {
       const el = refs.current[id];
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 80);
-    const t2 = setTimeout(() => setHlId(null), 2800);
+      if (el) {
+        // Compute combined sticky header height dynamically
+        const navwrap = document.querySelector(".navwrap");
+        const gsearch = document.querySelector(".g-search-wrap");
+        const navH = navwrap ? navwrap.getBoundingClientRect().height : 0;
+        const gH   = gsearch ? gsearch.getBoundingClientRect().height : 0;
+        const offset = navH + gH + 16; // breathing room
+        const rect = el.getBoundingClientRect();
+        const targetY = window.scrollY + rect.top - offset;
+        window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
+      }
+      nav.clearPendingTerm();
+    }, 120);
+
+    const t2 = setTimeout(() => setHlId(null), 3000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [nav && nav.pendingTermId]);
 
@@ -1894,10 +1908,12 @@ function App() {
   const clearPendingTerm = useCallback(() => setPendingTermId(null), []);
 
   useEffect(() => {
-    if (mainRef.current && !pendingTermId) {
+    // Don't scroll-to-top when a term jump is in progress — Glossary handles it
+    if (pendingTermId) return;
+    if (mainRef.current) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [active]);
+  }, [active, pendingTermId]);
 
   const nav = useMemo(() => ({ goToTerm, pendingTermId, clearPendingTerm }), [goToTerm, pendingTermId, clearPendingTerm]);
 
