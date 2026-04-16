@@ -16,14 +16,16 @@
         var stored = localStorage.getItem('theme');
         var sysLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
         var effective = stored || (sysLight ? 'light' : 'dark');
+        var bg = effective === 'light' ? '#f7f5ef' : '#0a0a0c';
         var root = document.documentElement;
         if (stored === 'dark' || stored === 'light') {
           root.setAttribute('data-theme', stored);
         }
-        root.classList.toggle('theme-light', effective === 'light');
-        root.classList.toggle('theme-dark',  effective === 'dark');
+        root.classList.remove(effective === 'light' ? 'theme-dark'  : 'theme-light');
+        root.classList.add(   effective === 'light' ? 'theme-light' : 'theme-dark');
+        root.style.backgroundColor = bg;
         var meta = document.getElementById('theme-color-meta');
-        if (meta) meta.setAttribute('content', effective === 'light' ? '#f7f5ef' : '#0a0a0c');
+        if (meta) meta.setAttribute('content', bg);
       } catch (e) {}
     })();
   </script>
@@ -34,7 +36,7 @@
   <link rel="icon" type="image/svg+xml" href="/assets/icon.svg" />
   <link rel="manifest" href="/manifest.webmanifest" />
 
-  <link rel="stylesheet" href="/assets/shared.css" />
+  <link rel="stylesheet" href="/assets/shared.css?v=3" />
 
   <style>
     .page {

@@ -22,14 +22,16 @@
         var stored = localStorage.getItem('theme'); // 'dark' | 'light' | null
         var sysLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
         var effective = stored || (sysLight ? 'light' : 'dark');
+        var bg = effective === 'light' ? '#f7f5ef' : '#0a0a0c';
         var root = document.documentElement;
         if (stored === 'dark' || stored === 'light') {
           root.setAttribute('data-theme', stored);
         }
-        root.classList.toggle('theme-light', effective === 'light');
-        root.classList.toggle('theme-dark',  effective === 'dark');
+        root.classList.remove(effective === 'light' ? 'theme-dark'  : 'theme-light');
+        root.classList.add(   effective === 'light' ? 'theme-light' : 'theme-dark');
+        root.style.backgroundColor = bg;
         var meta = document.getElementById('theme-color-meta');
-        if (meta) meta.setAttribute('content', effective === 'light' ? '#f7f5ef' : '#0a0a0c');
+        if (meta) meta.setAttribute('content', bg);
       } catch (e) { /* localStorage can throw in private mode; ignore */ }
     })();
   </script>
@@ -41,7 +43,7 @@
   <link rel="icon" type="image/svg+xml" href="/assets/icon.svg" />
   <link rel="manifest" href="/manifest.webmanifest" />
 
-  <link rel="stylesheet" href="/assets/shared.css" />
+  <link rel="stylesheet" href="/assets/shared.css?v=3" />
 
   <style>
     /* ------------------------------------------------------------------ */
@@ -666,26 +668,36 @@
     }
 
     function applyTheme(next) {
-      // next: 'dark' | 'light'. Persist + reflect on <html> + theme-color.
-      // Also flip theme-light/theme-dark classes: iOS Safari sometimes
-      // skipped repainting the body when only an attribute changed;
-      // toggling a class on <html> nudges the compositor.
+      // next: 'dark' | 'light'. Bulletproof version: persist, flip the
+      // attribute, flip helper classes, AND paint body + html inline.
+      // The inline styles force iOS Safari to repaint even when var(--bg)
+      // alone wouldn't (overflow-x:clip + var-only bg was getting skipped
+      // on some builds).
       try { localStorage.setItem('theme', next); } catch (e) {}
+      var bg = next === 'light' ? '#f7f5ef' : '#0a0a0c';
       var root = document.documentElement;
       root.setAttribute('data-theme', next);
-      root.classList.toggle('theme-light', next === 'light');
-      root.classList.toggle('theme-dark',  next === 'dark');
+      root.classList.remove(next === 'light' ? 'theme-dark'  : 'theme-light');
+      root.classList.add(   next === 'light' ? 'theme-light' : 'theme-dark');
+      root.style.backgroundColor = bg;
+      if (document.body) document.body.style.backgroundColor = bg;
       var meta = document.getElementById('theme-color-meta');
-      if (meta) meta.setAttribute('content', next === 'light' ? '#f7f5ef' : '#0a0a0c');
+      if (meta) meta.setAttribute('content', bg);
     }
 
     function ThemeToggle() {
-      const [theme, setTheme] = useState(effectiveTheme);
-      function flip() {
-        const next = theme === 'light' ? 'dark' : 'light';
+      // Don't trust a captured React state — always read the live DOM.
+      // That way a stale closure can never make the toggle a no-op.
+      const [, force] = useState(0);
+      function flip(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var cur = effectiveTheme();
+        var next = cur === 'light' ? 'dark' : 'light';
         applyTheme(next);
-        setTheme(next);
+        force((n) => n + 1);
       }
+      const theme = effectiveTheme();
       return (
         <button
           type="button"
