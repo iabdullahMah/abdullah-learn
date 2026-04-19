@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<!-- Theme boot: BEFORE stylesheet, no FOUC -->
+<script>
+(function(){
+  try {
+    var saved = localStorage.getItem('theme');
+    var sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    var theme = saved || sys;
+    if (saved) document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.classList.add(theme === 'light' ? 'theme-light' : 'theme-dark');
+    document.documentElement.style.backgroundColor = theme === 'light' ? '#f7f5ef' : '#0a0a0c';
+    var m = document.getElementById('theme-color-meta');
+    if (m) m.setAttribute('content', theme === 'light' ? '#f7f5ef' : '#0a0a0c');
+  } catch(e) {}
+})();
+</script>
+
+<!-- iOS / PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="learn">
+<meta name="theme-color" content="#0a0a0c" id="theme-color-meta">
+<meta name="description" content="SAML single sign-on — the protocol, the Okta→Slack flow, XSW and comment-injection attacks, and the Golden SAML technique behind SolarWinds.">
+
+<title>SAML — abdullah-learn</title>
+<link rel="apple-touch-icon" href="/assets/icon-180.png">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/assets/shared.css?v=4">
+
+<style>
+  /* Page-specific styles — CSS vars only, no hex */
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: calc(env(safe-area-inset-top) + 20px)
+             max(env(safe-area-inset-right), 16px)
+             calc(env(safe-area-inset-bottom) + 56px)
+             max(env(safe-area-inset-left), 16px);
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    padding: 0 4px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+  .back-link:active { color: var(--fg); }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    color: var(--fg-subtle);
+    font-size: 13px;
+    margin: 4px 0 12px;
+  }
+  .meta-row .dot {
+    width: 3px; height: 3px;
+    background: var(--fg-subtle);
+    border-radius: 50%;
+    opacity: .6;
+  }
+  .cat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    color: var(--fg);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .cat-chip::before {
+    content: "";
+    width: 6px; height: 6px;
+    background: var(--fg);
+    border-radius: 50%;
+    filter: var(--accent-filter);
+  }
+
+  .page h1 {
+    font-family: var(--font-display);
+    font-size: clamp(32px, 7vw, 48px);
+    line-height: 1.05;
+    margin: 8px 0 14px;
+    letter-spacing: -0.02em;
+  }
+  .page .lead {
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--fg-muted);
+    margin: 0 0 28px;
+  }
+
+  .page h2 {
+    font-family: var(--font-display);
+    font-size: clamp(22px, 4.5vw, 28px);
+    margin: 40px 0 12px;
+    letter-spacing: -0.01em;
+    scroll-margin-top: calc(env(safe-area-inset-top) + 60px);
+  }
+  .page h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 28px 0 10px;
+    color: var(--fg);
+    scroll-margin-top: calc(env(safe-area-inset-top) + 60px);
+  }
+  .page p, .page li { font-size: 16px; line-height: 1.65; color: var(--fg); }
+  .page p { margin: 0 0 14px; }
+  .page ol, .page ul { padding-left: 22px; margin: 0 0 16px; }
+  .page li { margin-bottom: 8px; }
+  .page li::marker { color: var(--fg-subtle); }
+
+  .page code {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    padding: 2px 6px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .page pre {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 14px 0;
+  }
+  .page pre code {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    font-size: inherit;
+  }
+
+  /* Definition list for the cast */
+  .dl-cast {
+    margin: 0 0 20px;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .dl-cast dt {
+    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    margin-top: 10px;
+    color: var(--fg);
+  }
+  .dl-cast dt:first-child { margin-top: 0; }
+  .dl-cast dd {
+    margin: 2px 0 0;
+    font-size: 15px;
+    color: var(--fg-muted);
+    line-height: 1.5;
+  }
+
+  /* Callout */
+  .callout {
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border-left: 3px solid var(--accent);
+    margin: 20px 0;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--fg);
+  }
+  .callout strong { color: var(--fg); font-weight: 600; }
+
+  .callout-danger {
+    background: color-mix(in srgb, var(--fg) 6%, transparent);
+    border-left-color: var(--fg);
+  }
+
+  /* Attack list */
+  .attack-list {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0 20px;
+    display: grid;
+    gap: 12px;
+  }
+  .attack-list > li {
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 0;
+  }
+  .attack-list .atk-title {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 4px;
+    color: var(--fg);
+  }
+  .attack-list .atk-title .num {
+    display: inline-block;
+    min-width: 22px;
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+  .attack-list .atk-body {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--fg-muted);
+  }
+
+  /* Flow stepper */
+  #saml-flow { margin: 20px 0 28px; }
+  .stepper {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .stepper-nav {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    margin: 0 -4px 14px;
+    padding: 2px 4px 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .stepper-nav::-webkit-scrollbar { display: none; }
+  .step-btn {
+    flex: 0 0 auto;
+    min-height: var(--tap);
+    min-width: var(--tap);
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-raised);
+    color: var(--fg-muted);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    scroll-snap-align: start;
+    font-family: var(--font-body);
+  }
+  .step-btn.active {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    color: var(--fg);
+  }
+
+  .stepper-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin-bottom: 12px;
+  }
+  .lane-label {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    fill: var(--fg-muted);
+  }
+  .lane-box {
+    fill: var(--bg-raised);
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+  .lifeline { stroke: var(--border); stroke-width: 1; stroke-dasharray: 4 4; }
+  .flow-arrow { stroke: var(--fg-subtle); stroke-width: 1.5; fill: none; opacity: .35; transition: opacity .15s, stroke .15s; }
+  .flow-arrow.active { stroke: var(--fg); opacity: 1; filter: var(--accent-filter); }
+  .flow-label { font-size: 11px; font-family: var(--font-mono); fill: var(--fg-subtle); opacity: .4; transition: opacity .15s, fill .15s; }
+  .flow-label.active { fill: var(--fg); opacity: 1; }
+
+  .step-body {
+    min-height: 80px;
+    padding: 12px 14px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--fg);
+  }
+  .step-body .from-to {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--fg-subtle);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .step-body strong { color: var(--fg); font-weight: 600; }
+
+  .stepper-controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .ctl-btn {
+    flex: 1;
+    min-height: var(--tap);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-raised);
+    color: var(--fg);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-body);
+  }
+  .ctl-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .ctl-btn:active:not(:disabled) { background: var(--bg-card-hover); }
+
+  /* Golden SAML static diagram */
+  .golden-diagram {
+    margin: 18px 0 22px;
+    padding: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .golden-diagram svg { width: 100%; height: auto; display: block; }
+  .gs-box {
+    fill: var(--bg-raised);
+    stroke: var(--fg);
+    stroke-width: 1;
+  }
+  .gs-title { font-size: 13px; font-weight: 600; fill: var(--fg); font-family: var(--font-body); }
+  .gs-sub   { font-size: 11px; fill: var(--fg-muted); font-family: var(--font-mono); }
+  .gs-arrow { stroke: var(--fg); stroke-width: 1.5; fill: none; }
+  .gs-ghost-box { fill: transparent; stroke: var(--fg-subtle); stroke-width: 1; stroke-dasharray: 4 4; }
+  .gs-ghost-text { font-size: 11px; fill: var(--fg-subtle); font-family: var(--font-mono); font-style: italic; }
+
+  .cve-list {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: 12px 0 20px;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+  .cve-list code { font-size: 13px; }
+
+  /* Defense two-column */
+  .defense-grid {
+    display: grid;
+    gap: 14px;
+    margin: 16px 0 20px;
+  }
+  @media (min-width: 680px) {
+    .defense-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .defense-card {
+    padding: 16px 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .defense-card h4 {
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--fg-muted);
+    margin: 0 0 10px;
+  }
+  .defense-card ul { padding-left: 18px; margin: 0; }
+  .defense-card li { font-size: 14px; line-height: 1.55; margin-bottom: 6px; color: var(--fg); }
+
+  /* Tags */
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 36px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .tags .tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    color: var(--fg-muted);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    text-decoration: none;
+  }
+  .tags .tag:active { background: var(--bg-card-hover); color: var(--fg); }
+</style>
+</head>
+
+<body>
+<article class="page prose" data-cat="auth">
+
+  <a href="/" class="back-link">← index</a>
+
+  <header>
+    <div class="meta-row">
+      <span class="cat-chip">Auth &amp; Sessions</span>
+      <span class="dot"></span>
+      <time datetime="2026-04-19">2026-04-19</time>
+      <span class="dot"></span>
+      <span>~10 min</span>
+    </div>
+    <h1>SAML</h1>
+    <p class="lead">Security Assertion Markup Language — how single sign-on actually works, how attackers tear it apart, and why Golden SAML is the attack you have to know cold.</p>
+  </header>
+
+  <nav class="toc" aria-label="Table of contents"></nav>
+
+  <section>
+    <p>SAML (Security Assertion Markup Language) exists so you log in once at a central authority and every connected app trusts that login — no separate password per app, no duplicate user databases.</p>
+  </section>
+
+  <h2 id="normal">Normal scenario</h2>
+
+  <p>Three parties, one signed XML blob. The IdP vouches for the user; the SP trusts the signature.</p>
+
+  <dl class="dl-cast">
+    <dt>Principal</dt>
+    <dd>The user being authenticated.</dd>
+    <dt>SP — Service Provider</dt>
+    <dd>The application the user wants to access (Slack, Salesforce, AWS console).</dd>
+    <dt>IdP — Identity Provider</dt>
+    <dd>The authentication authority (Okta, Azure AD, ADFS = Active Directory Federation Services, Ping, Auth0).</dd>
+    <dt>AuthnRequest</dt>
+    <dd>XML message from the SP asking the IdP to authenticate the user.</dd>
+    <dt>Assertion</dt>
+    <dd>Signed XML blob from the IdP that says <em>"this is user X, authenticated at time Y, allowed to use SP Z"</em>.</dd>
+    <dt>ACS — Assertion Consumer Service</dt>
+    <dd>The SP endpoint that receives the posted assertion.</dd>
+  </dl>
+
+  <p>Everything hangs on XML-DSig (XML Digital Signature, RFC 3275). The SP verifies the assertion came from the IdP using the IdP's public certificate — which was registered at the time the SSO integration was configured — without having to trust the browser that carried it.</p>
+
+  <h3>Interactive flow — SP-initiated SSO</h3>
+  <p>Step through the six hops. Tap a step to see which arrow fires and what crosses the wire.</p>
+
+  <div id="saml-flow"></div>
+
+  <h2 id="real-life">Real-life — Okta → Slack</h2>
+
+  <p>You open <code>slack.com</code> at an enterprise tenant. Slack has no password for you — it generated a SAML AuthnRequest and 302-redirected your browser to <code>company.okta.com/app/slack/sso/saml</code>.</p>
+
+  <p>You authenticate with Okta: password plus push MFA (Multi-Factor Authentication). Okta builds a SAML Response containing an Assertion with <code>NameID=ag@company.com</code>, group memberships, and role attributes, signs it with Okta's private certificate, and sends your browser a form that auto-POSTs back to <code>slack.com/saml/acs</code>.</p>
+
+  <p>Slack then validates everything:</p>
+  <ul>
+    <li>Signature against Okta's public cert (pinned when SSO was configured)</li>
+    <li><code>Audience</code> matches Slack's entity ID</li>
+    <li><code>Recipient</code> / <code>Destination</code> matches the ACS URL</li>
+    <li><code>NotOnOrAfter</code> is within a 5-minute window</li>
+    <li><code>InResponseTo</code> matches the AuthnRequest Slack actually issued</li>
+  </ul>
+  <p>All green → Slack drops you into the workspace with the right org and roles. You never typed a Slack password.</p>
+
+  <h2 id="attack">Attacker perspective</h2>
+
+  <p>SAML's attack surface is unusually rich because assertions are XML, signatures are applied to XML subtrees, and the same document is parsed twice — once for signature verification, once for claim extraction. That seam is where the bugs live.</p>
+
+  <ol class="attack-list">
+    <li>
+      <div class="atk-title"><span class="num">1.</span> XML Signature Wrapping (XSW)</div>
+      <div class="atk-body">XML allows duplicate element IDs. You wrap the legitimately signed assertion inside a new envelope and inject a forged assertion at a different location. The signature-verification parser reads the original element and returns "valid"; the claim-extraction parser reads the injected one and returns attacker-controlled claims. Same-Document Reference confusion. <code>SAML Raider</code> Burp extension has 8 pre-built wrapping variants.</div>
+    </li>
+    <li>
+      <div class="atk-title"><span class="num">2.</span> Signature exclusion</div>
+      <div class="atk-body">Strip the <code>&lt;ds:Signature&gt;</code> element entirely. Misconfigured SPs accept unsigned assertions when no signature is present (instead of rejecting). Surprisingly common in homegrown integrations.</div>
+    </li>
+    <li>
+      <div class="atk-title"><span class="num">3.</span> Comment injection in NameID</div>
+      <div class="atk-body"><code>&lt;NameID&gt;admin@victim.com&lt;!----&gt;.attacker.com&lt;/NameID&gt;</code>. Some XML libraries preserve comments during signature canonicalization but the claim-extraction code truncates at the comment. Signature verifies against the full string; the SP reads <code>admin@victim.com</code>.</div>
+    </li>
+    <li>
+      <div class="atk-title"><span class="num">4.</span> Algorithm downgrade</div>
+      <div class="atk-body">Force <code>SignatureMethod</code> to MD5, SHA1, or <code>none</code> if the library tolerates it.</div>
+    </li>
+    <li>
+      <div class="atk-title"><span class="num">5.</span> Missing claim validation</div>
+      <div class="atk-body">SP doesn't enforce <code>Audience</code> / <code>Recipient</code> / <code>NotOnOrAfter</code> / <code>InResponseTo</code>. Replay assertions across SPs, or long after issuance.</div>
+    </li>
+    <li>
+      <div class="atk-title"><span class="num">6.</span> XXE in the SAML parser</div>
+      <div class="atk-body">If DTD (Document Type Definition) processing and external entity resolution are enabled, the assertion becomes an XXE (XML External Entity) vector — file reads, SSRF, the usual XXE consequences.</div>
+    </li>
+    <li>
+      <div class="atk-title"><span class="num">7.</span> Golden SAML</div>
+      <div class="atk-body">Compromise the IdP's private signing key and forge assertions at will. Nuclear option. Diagrammed below.</div>
+    </li>
+  </ol>
+
+  <h3 id="golden">Golden SAML — the nuclear option</h3>
+
+  <p>Once the IdP's private signing key is in the attacker's hands, SAML's entire trust model collapses. Assertions can be forged for any user, any role, any SP — and the signatures are cryptographically indistinguishable from genuine ones.</p>
+
+  <div class="golden-diagram">
+    <svg viewBox="0 0 680 260" aria-label="Golden SAML attack diagram" role="img">
+      <defs>
+        <marker id="gs-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <!-- Ghost box: IdP bypassed -->
+      <rect x="250" y="20" width="180" height="56" rx="10" class="gs-ghost-box"/>
+      <text x="340" y="44" text-anchor="middle" class="gs-ghost-text">IdP (never contacted</text>
+      <text x="340" y="60" text-anchor="middle" class="gs-ghost-text">after key theft)</text>
+      <line x1="262" y1="30" x2="418" y2="68" class="gs-ghost-box" stroke="var(--fg-subtle)" stroke-width="1"/>
+      <line x1="418" y1="30" x2="262" y2="68" class="gs-ghost-box" stroke="var(--fg-subtle)" stroke-width="1"/>
+
+      <!-- Step 1 -->
+      <rect x="30" y="110" width="180" height="64" rx="10" class="gs-box" style="filter: var(--accent-filter);"/>
+      <text x="120" y="136" text-anchor="middle" class="gs-title">1. Steal signing key</text>
+      <text x="120" y="156" text-anchor="middle" class="gs-sub">From IdP (e.g. ADFS)</text>
+
+      <!-- Step 2 -->
+      <rect x="250" y="110" width="180" height="64" rx="10" class="gs-box"/>
+      <text x="340" y="136" text-anchor="middle" class="gs-title">2. Forge + sign assertion</text>
+      <text x="340" y="156" text-anchor="middle" class="gs-sub">any user, any roles</text>
+
+      <!-- Step 3 -->
+      <rect x="470" y="110" width="180" height="64" rx="10" class="gs-box" style="filter: var(--accent-filter);"/>
+      <text x="560" y="136" text-anchor="middle" class="gs-title">3. SP trusts it</text>
+      <text x="560" y="156" text-anchor="middle" class="gs-sub">signature is valid</text>
+
+      <!-- Arrows -->
+      <line x1="212" y1="142" x2="248" y2="142" class="gs-arrow" marker-end="url(#gs-ar)"/>
+      <line x1="432" y1="142" x2="468" y2="142" class="gs-arrow" marker-end="url(#gs-ar)"/>
+
+      <!-- Caption -->
+      <text x="340" y="216" text-anchor="middle" class="gs-sub">no user login · no MFA · no IdP audit trail</text>
+      <text x="340" y="236" text-anchor="middle" class="gs-sub">cryptographically indistinguishable from legitimate auth</text>
+    </svg>
+  </div>
+
+  <h3>Real incident — SolarWinds / Golden SAML (December 2020)</h3>
+
+  <p>APT29 (Nobelium / Cozy Bear, Russian SVR) used the SolarWinds Orion supply-chain compromise to land inside victim networks, then pivoted onto ADFS servers and exfiltrated the token-signing certificate. With the private key in hand they forged SAML tokens for arbitrary users — including Global Admins — and authenticated to Microsoft 365 (Exchange, Teams, SharePoint) and Azure AD without ever touching the real IdP.</p>
+
+  <p>No user typed a password, no MFA prompt fired, no IdP login event was generated. The signatures were cryptographically valid and Microsoft had no protocol-level way to distinguish forged from genuine. CyberArk researchers named and demonstrated the technique in 2017 — three years before it was used at this scale.</p>
+
+  <h3>Notable CVEs (quote these in reports)</h3>
+
+  <div class="cve-list">
+    <p><strong><code>CVE-2017-11427</code></strong> — python-saml, OneLogin, and others. Comment-truncation NameID bypass; auth as any user with a one-character payload.</p>
+    <p style="margin-bottom:0"><strong><code>CVE-2024-45409</code></strong> — ruby-saml, September 2024. Improper signature validation; full auth bypass. Hit GitLab and every downstream Ruby SAML consumer.</p>
+  </div>
+
+  <h2 id="defense">Defense / fix for client reports</h2>
+
+  <div class="defense-grid">
+    <div class="defense-card">
+      <h4>SP side</h4>
+      <ul>
+        <li>Require signatures on both <code>&lt;Response&gt;</code> AND <code>&lt;Assertion&gt;</code> — defense in depth against XSW</li>
+        <li>Validate against a single pinned IdP certificate, not any cert in a chain</li>
+        <li>Reject unsigned assertions outright; reject <code>SignatureMethod=none</code></li>
+        <li>Use a SAML library where signature verification and claim extraction reference the same DOM node — parser mismatch is the root cause of XSW</li>
+        <li>Strictly validate <code>Audience</code>, <code>Recipient</code> / <code>Destination</code>, <code>NotBefore</code> / <code>NotOnOrAfter</code> (≤5 min), and <code>InResponseTo</code></li>
+        <li>Track assertion IDs for replay protection across the validity window</li>
+        <li>Disable DTD processing and external entity resolution — kills XXE</li>
+        <li>Parse NameID with a library that strips or ignores comments</li>
+      </ul>
+    </div>
+
+    <div class="defense-card">
+      <h4>IdP side (anti-Golden SAML)</h4>
+      <ul>
+        <li>Store token-signing keys in an HSM (Hardware Security Module) — private key non-exportable</li>
+        <li>On ADFS: restrict signing-cert export to tier-0 admins; alert on <code>certutil -exportpfx</code> or DKM extraction</li>
+        <li>Rotate signing certificates on a defined schedule</li>
+        <li>SIEM (Security Information and Event Management) correlation: any SP SAML login without a matching IdP auth event = forged assertion</li>
+        <li>Monitor for anomalous assertions — users who never log in, foreign geolocation, issuance bursts</li>
+        <li>Treat ADFS / federation servers as tier-0: full EDR (Endpoint Detection and Response), segmentation, no shared credentials with general Windows admins</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>HTB Barrier note.</strong> The box revolves around XSW — specifically variants 1–4. Load the <code>SAML Raider</code> Burp extension, intercept the SAML Response at the ACS POST, and iterate through the wrapping payloads until the SP accepts an assertion for a different user. Comment injection in NameID is the secondary path if the library is python-saml-old.
+  </div>
+
+  <div class="tags">
+    <a class="tag" data-tag="saml">saml</a>
+    <a class="tag" data-tag="auth">auth</a>
+    <a class="tag" data-tag="sso">sso</a>
+    <a class="tag" data-tag="xsw">xsw</a>
+    <a class="tag" data-tag="golden-saml">golden-saml</a>
+    <a class="tag" data-tag="adfs">adfs</a>
+    <a class="tag" data-tag="xml">xml</a>
+    <a class="tag" data-tag="htb">htb</a>
+  </div>
+
+</article>
+
+<!-- React + Babel for interactive flow stepper -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useMemo } = React;
+
+const LANES = [
+  { id: 'user', label: 'User browser',    x: 80  },
+  { id: 'sp',   label: 'Service Provider', x: 340 },
+  { id: 'idp',  label: 'Identity Provider',x: 600 }
+];
+
+const STEPS = [
+  {
+    n: 1, from: 'user', to: 'sp',
+    short: 'Request access',
+    title: 'User → SP: request access',
+    body: <>You hit the app's URL. No session cookie, no active SAML assertion — the SP sees an unauthenticated request and decides to kick off SSO.</>
+  },
+  {
+    n: 2, from: 'sp', to: 'user',
+    short: 'AuthnRequest',
+    title: 'SP → User: AuthnRequest (302 redirect)',
+    body: <>SP generates a SAML <code>AuthnRequest</code> (XML, optionally signed) with its entity ID, the ACS URL, and a unique request ID. The user's browser is redirected to the IdP's SSO endpoint with the AuthnRequest carried as a query parameter or HTTP POST.</>
+  },
+  {
+    n: 3, from: 'user', to: 'idp',
+    short: 'Authenticate',
+    title: 'User → IdP: authenticate + MFA',
+    body: <>Browser follows the redirect to the IdP. If you don't already have an IdP session, you enter credentials and complete MFA (Multi-Factor Authentication). Everything below this point depends on the IdP trusting this login.</>
+  },
+  {
+    n: 4, from: 'idp', to: 'user',
+    short: 'Signed assertion',
+    title: 'IdP → User: signed SAML Response',
+    body: <>IdP builds a SAML <code>Response</code> containing an <code>Assertion</code> with <code>NameID</code>, attributes, conditions (<code>Audience</code>, <code>NotOnOrAfter</code>). It signs either the Response, the Assertion, or both with its private key. The response is returned as an auto-submitting HTML form.</>
+  },
+  {
+    n: 5, from: 'user', to: 'sp',
+    short: 'POST to ACS',
+    title: 'User → SP: POST assertion to ACS',
+    body: <>The browser auto-submits the form to the SP's <code>/acs</code> (Assertion Consumer Service) endpoint. The signed SAML Response rides along as a POST body parameter.</>
+  },
+  {
+    n: 6, from: 'sp', to: 'user',
+    short: 'Session',
+    title: 'SP: validate + create session',
+    body: <>SP verifies the signature against the pinned IdP certificate, checks <code>Audience</code>, <code>Recipient</code>, <code>NotOnOrAfter</code>, and <code>InResponseTo</code>, extracts the <code>NameID</code> and attributes, creates a local session, and responds with the app's home page.</>
+  }
+];
+
+function laneX(id) { return LANES.find(l => l.id === id).x; }
+
+function Flow({ step }) {
+  const active = STEPS[step - 1];
+  const lanes = LANES.map(l => (
+    <g key={l.id}>
+      <rect className="lane-box" x={l.x - 72} y={20} width={144} height={34} rx={8}/>
+      <text className="lane-label" x={l.x} y={41} textAnchor="middle">{l.label}</text>
+      <line className="lifeline" x1={l.x} y1={54} x2={l.x} y2={260}/>
+    </g>
+  ));
+
+  const arrows = STEPS.map((s, i) => {
+    const y = 80 + i * 28;
+    const x1 = laneX(s.from);
+    const x2 = laneX(s.to);
+    const dir = x2 > x1 ? 1 : -1;
+    const isActive = (i + 1) === step;
+    const labelX = (x1 + x2) / 2;
+    return (
+      <g key={s.n}>
+        <line
+          className={'flow-arrow' + (isActive ? ' active' : '')}
+          x1={x1 + 8 * dir} y1={y} x2={x2 - 8 * dir} y2={y}
+          markerEnd="url(#arr)"
+        />
+        <text
+          className={'flow-label' + (isActive ? ' active' : '')}
+          x={labelX} y={y - 5} textAnchor="middle"
+        >{s.n}. {s.short}</text>
+      </g>
+    );
+  });
+
+  return (
+    <svg className="stepper-svg" viewBox="0 0 680 260" aria-label="SAML SP-initiated flow" role="img">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </marker>
+      </defs>
+      {lanes}
+      {arrows}
+    </svg>
+  );
+}
+
+function Stepper() {
+  const [step, setStep] = useState(1);
+  const active = STEPS[step - 1];
+
+  return (
+    <div className="stepper">
+      <div className="stepper-nav" role="tablist">
+        {STEPS.map(s => (
+          <button
+            key={s.n}
+            className={'step-btn' + (s.n === step ? ' active' : '')}
+            onClick={() => setStep(s.n)}
+            aria-selected={s.n === step}
+            role="tab"
+          >{s.n}. {s.short}</button>
+        ))}
+      </div>
+
+      <Flow step={step}/>
+
+      <div className="step-body">
+        <div className="from-to">{active.title}</div>
+        <div>{active.body}</div>
+      </div>
+
+      <div className="stepper-controls">
+        <button className="ctl-btn" onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1}>← prev</button>
+        <button className="ctl-btn" onClick={() => setStep(Math.min(STEPS.length, step + 1))} disabled={step === STEPS.length}>next →</button>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('saml-flow')).render(<Stepper/>);
+</script>
+
+<!-- Shared enhancements — REQUIRED before </body> -->
+<script src="https://unpkg.com/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://unpkg.com/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script src="/assets/enhance.js?v=1"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js').catch(function(){});
+    });
+  }
+</script>
+
+</body>
+</html>
