@@ -96,6 +96,23 @@
   "tags": ["oauth", "redirect-uri", "token-theft", "postmessage", "open-redirect", "implicit-flow", "pkce", "csrf", "state-parameter", "oidc"],
   "date": "2026-04-17",
   "interactive": false
+},
+    {
+  "slug": "saml",
+  "title": "SAML",
+  "description": "Security Assertion Markup Language — SP-initiated SSO, XSW and comment-injection attacks, and the Golden SAML technique behind SolarWinds.",
+  "category": "auth",
+  "tags": [
+    "saml",
+    "sso",
+    "xsw",
+    "golden-saml",
+    "adfs",
+    "xml",
+    "htb"
+  ],
+  "date": "2026-04-19",
+  "interactive": true
 }
 
 
