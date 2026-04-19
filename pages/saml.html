@@ -103,15 +103,76 @@
     font-size: 17px;
     line-height: 1.55;
     color: var(--fg-muted);
-    margin: 0 0 28px;
+    margin: 0 0 24px;
+  }
+
+  /* ── Horizontal pill-chip TOC (the standard) ─────────────── */
+  .page-toc {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 calc(max(env(safe-area-inset-left), 16px) * -1)
+           28px
+           calc(max(env(safe-area-inset-right), 16px) * -1);
+    padding: 4px max(env(safe-area-inset-left), 16px) 10px
+                 max(env(safe-area-inset-right), 16px);
+    scrollbar-width: none;
+  }
+  .page-toc::-webkit-scrollbar { display: none; }
+  .page-toc a {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    color: var(--fg-muted);
+    font-size: 13px;
+    text-decoration: none;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+  .page-toc a:active,
+  .page-toc a:focus-visible {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    color: var(--fg);
+    outline: none;
+  }
+
+  /* ── Numbered section prefix ─────────────────────────────── */
+  .sec-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 22px;
+    padding: 0 7px;
+    margin-right: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-raised);
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+    position: relative;
+    top: -4px;
   }
 
   .page h2 {
     font-family: var(--font-display);
     font-size: clamp(22px, 4.5vw, 28px);
-    margin: 40px 0 12px;
+    margin: 44px 0 14px;
     letter-spacing: -0.01em;
     scroll-margin-top: calc(env(safe-area-inset-top) + 60px);
+    line-height: 1.2;
   }
   .page h3 {
     font-size: 18px;
@@ -188,11 +249,6 @@
   }
   .callout strong { color: var(--fg); font-weight: 600; }
 
-  .callout-danger {
-    background: color-mix(in srgb, var(--fg) 6%, transparent);
-    border-left-color: var(--fg);
-  }
-
   /* Attack list */
   .attack-list {
     list-style: none;
@@ -243,6 +299,7 @@
     margin: 0 -4px 14px;
     padding: 2px 4px 6px;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
   .stepper-nav::-webkit-scrollbar { display: none; }
   .step-btn {
@@ -329,7 +386,7 @@
   .ctl-btn:disabled { opacity: .4; cursor: not-allowed; }
   .ctl-btn:active:not(:disabled) { background: var(--bg-card-hover); }
 
-  /* Golden SAML static diagram */
+  /* Golden SAML diagram */
   .golden-diagram {
     margin: 18px 0 22px;
     padding: 16px;
@@ -430,13 +487,23 @@
     <p class="lead">Security Assertion Markup Language — how single sign-on actually works, how attackers tear it apart, and why Golden SAML is the attack you have to know cold.</p>
   </header>
 
-  <nav class="toc" aria-label="Table of contents"></nav>
+  <!-- Horizontal pill-chip TOC -->
+  <nav class="page-toc" aria-label="Sections">
+    <a href="#normal">Normal</a>
+    <a href="#flow">Flow</a>
+    <a href="#real-life">Okta → Slack</a>
+    <a href="#attacks">Attacks</a>
+    <a href="#golden">Golden SAML</a>
+    <a href="#solarwinds">SolarWinds</a>
+    <a href="#cves">CVEs</a>
+    <a href="#defense">Defense</a>
+  </nav>
 
   <section>
     <p>SAML (Security Assertion Markup Language) exists so you log in once at a central authority and every connected app trusts that login — no separate password per app, no duplicate user databases.</p>
   </section>
 
-  <h2 id="normal">Normal scenario</h2>
+  <h2 id="normal"><span class="sec-num">01</span>Normal scenario</h2>
 
   <p>Three parties, one signed XML blob. The IdP vouches for the user; the SP trusts the signature.</p>
 
@@ -455,14 +522,15 @@
     <dd>The SP endpoint that receives the posted assertion.</dd>
   </dl>
 
-  <p>Everything hangs on XML-DSig (XML Digital Signature, RFC 3275). The SP verifies the assertion came from the IdP using the IdP's public certificate — which was registered at the time the SSO integration was configured — without having to trust the browser that carried it.</p>
+  <p>Everything hangs on XML-DSig (XML Digital Signature, RFC 3275). The SP verifies the assertion came from the IdP using the IdP's public certificate — registered when the SSO integration was configured — without having to trust the browser that carried it.</p>
 
-  <h3>Interactive flow — SP-initiated SSO</h3>
-  <p>Step through the six hops. Tap a step to see which arrow fires and what crosses the wire.</p>
+  <h2 id="flow"><span class="sec-num">02</span>Interactive flow</h2>
+
+  <p>Step through the six hops of SP-initiated SSO. Tap a step to see which arrow fires and what crosses the wire.</p>
 
   <div id="saml-flow"></div>
 
-  <h2 id="real-life">Real-life — Okta → Slack</h2>
+  <h2 id="real-life"><span class="sec-num">03</span>Real-life — Okta → Slack</h2>
 
   <p>You open <code>slack.com</code> at an enterprise tenant. Slack has no password for you — it generated a SAML AuthnRequest and 302-redirected your browser to <code>company.okta.com/app/slack/sso/saml</code>.</p>
 
@@ -478,7 +546,7 @@
   </ul>
   <p>All green → Slack drops you into the workspace with the right org and roles. You never typed a Slack password.</p>
 
-  <h2 id="attack">Attacker perspective</h2>
+  <h2 id="attacks"><span class="sec-num">04</span>Attacker perspective</h2>
 
   <p>SAML's attack surface is unusually rich because assertions are XML, signatures are applied to XML subtrees, and the same document is parsed twice — once for signature verification, once for claim extraction. That seam is where the bugs live.</p>
 
@@ -507,13 +575,9 @@
       <div class="atk-title"><span class="num">6.</span> XXE in the SAML parser</div>
       <div class="atk-body">If DTD (Document Type Definition) processing and external entity resolution are enabled, the assertion becomes an XXE (XML External Entity) vector — file reads, SSRF, the usual XXE consequences.</div>
     </li>
-    <li>
-      <div class="atk-title"><span class="num">7.</span> Golden SAML</div>
-      <div class="atk-body">Compromise the IdP's private signing key and forge assertions at will. Nuclear option. Diagrammed below.</div>
-    </li>
   </ol>
 
-  <h3 id="golden">Golden SAML — the nuclear option</h3>
+  <h2 id="golden"><span class="sec-num">05</span>Golden SAML — the nuclear option</h2>
 
   <p>Once the IdP's private signing key is in the attacker's hands, SAML's entire trust model collapses. Assertions can be forged for any user, any role, any SP — and the signatures are cryptographically indistinguishable from genuine ones.</p>
 
@@ -557,20 +621,20 @@
     </svg>
   </div>
 
-  <h3>Real incident — SolarWinds / Golden SAML (December 2020)</h3>
+  <h3 id="solarwinds">Real incident — SolarWinds (December 2020)</h3>
 
   <p>APT29 (Nobelium / Cozy Bear, Russian SVR) used the SolarWinds Orion supply-chain compromise to land inside victim networks, then pivoted onto ADFS servers and exfiltrated the token-signing certificate. With the private key in hand they forged SAML tokens for arbitrary users — including Global Admins — and authenticated to Microsoft 365 (Exchange, Teams, SharePoint) and Azure AD without ever touching the real IdP.</p>
 
   <p>No user typed a password, no MFA prompt fired, no IdP login event was generated. The signatures were cryptographically valid and Microsoft had no protocol-level way to distinguish forged from genuine. CyberArk researchers named and demonstrated the technique in 2017 — three years before it was used at this scale.</p>
 
-  <h3>Notable CVEs (quote these in reports)</h3>
+  <h3 id="cves">Notable CVEs (quote these in reports)</h3>
 
   <div class="cve-list">
     <p><strong><code>CVE-2017-11427</code></strong> — python-saml, OneLogin, and others. Comment-truncation NameID bypass; auth as any user with a one-character payload.</p>
     <p style="margin-bottom:0"><strong><code>CVE-2024-45409</code></strong> — ruby-saml, September 2024. Improper signature validation; full auth bypass. Hit GitLab and every downstream Ruby SAML consumer.</p>
   </div>
 
-  <h2 id="defense">Defense / fix for client reports</h2>
+  <h2 id="defense"><span class="sec-num">06</span>Defense / fix for client reports</h2>
 
   <div class="defense-grid">
     <div class="defense-card">
@@ -623,7 +687,7 @@
 <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
 
 <script type="text/babel">
-const { useState, useMemo } = React;
+const { useState } = React;
 
 const LANES = [
   { id: 'user', label: 'User browser',    x: 80  },
@@ -642,19 +706,19 @@ const STEPS = [
     n: 2, from: 'sp', to: 'user',
     short: 'AuthnRequest',
     title: 'SP → User: AuthnRequest (302 redirect)',
-    body: <>SP generates a SAML <code>AuthnRequest</code> (XML, optionally signed) with its entity ID, the ACS URL, and a unique request ID. The user's browser is redirected to the IdP's SSO endpoint with the AuthnRequest carried as a query parameter or HTTP POST.</>
+    body: <>SP generates a SAML <code>AuthnRequest</code> (XML, optionally signed) with its entity ID, the ACS URL, and a unique request ID. The browser is redirected to the IdP's SSO endpoint with the AuthnRequest carried as a query parameter or HTTP POST.</>
   },
   {
     n: 3, from: 'user', to: 'idp',
     short: 'Authenticate',
     title: 'User → IdP: authenticate + MFA',
-    body: <>Browser follows the redirect to the IdP. If you don't already have an IdP session, you enter credentials and complete MFA (Multi-Factor Authentication). Everything below this point depends on the IdP trusting this login.</>
+    body: <>Browser follows the redirect to the IdP. If there's no active IdP session, the user enters credentials and completes MFA (Multi-Factor Authentication). Everything below this point depends on the IdP trusting this login.</>
   },
   {
     n: 4, from: 'idp', to: 'user',
     short: 'Signed assertion',
     title: 'IdP → User: signed SAML Response',
-    body: <>IdP builds a SAML <code>Response</code> containing an <code>Assertion</code> with <code>NameID</code>, attributes, conditions (<code>Audience</code>, <code>NotOnOrAfter</code>). It signs either the Response, the Assertion, or both with its private key. The response is returned as an auto-submitting HTML form.</>
+    body: <>IdP builds a SAML <code>Response</code> containing an <code>Assertion</code> with <code>NameID</code>, attributes, and conditions (<code>Audience</code>, <code>NotOnOrAfter</code>). It signs either the Response, the Assertion, or both with its private key. The response is returned as an auto-submitting HTML form.</>
   },
   {
     n: 5, from: 'user', to: 'sp',
@@ -673,7 +737,6 @@ const STEPS = [
 function laneX(id) { return LANES.find(l => l.id === id).x; }
 
 function Flow({ step }) {
-  const active = STEPS[step - 1];
   const lanes = LANES.map(l => (
     <g key={l.id}>
       <rect className="lane-box" x={l.x - 72} y={20} width={144} height={34} rx={8}/>
