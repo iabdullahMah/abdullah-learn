@@ -801,28 +801,8 @@
     font-size: 12px;
   }
 
-  /* ---------- Footer ---------- */
-  .foot {
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    gap: 14px;
-    flex-wrap: wrap;
-  }
-  .foot .linkbtn {
-    background: none;
-    border: 0;
-    color: var(--fg-muted);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    cursor: pointer;
-    padding: 10px 4px;
-    min-height: var(--tap);
-    letter-spacing: 0.04em;
-  }
-  .foot .linkbtn.next { color: var(--accent); filter: var(--accent-filter); }
+  /* Anchor-scroll offset for sticky nav */
+  section[id] { scroll-margin-top: calc(env(safe-area-inset-top) + 72px); }
 
   /* ---------- Loading ---------- */
   #loading {
@@ -1935,45 +1915,41 @@ function Glossary() {
 function App() {
   const [active, setActive] = useState("foundations");
   const [pendingTermId, setPendingTermId] = useState(null);
-  const pendingRef = useRef(null); // mirror of pendingTermId that doesn't trigger effects
-  const mainRef = useRef(null);
+  const pendingRef = useRef(null);
+
+  const scrollToSection = useCallback(id => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   const goToTerm = useCallback(id => {
     pendingRef.current = id;
     setPendingTermId(id);
-    setActive("glossary");
-  }, []);
+    scrollToSection("glossary");
+  }, [scrollToSection]);
+
   const clearPendingTerm = useCallback(() => {
     pendingRef.current = null;
     setPendingTermId(null);
   }, []);
 
+  // Active chip tracking via IntersectionObserver
   useEffect(() => {
-    // Only scroll-to-top when switching sections WITHOUT a pending term jump.
-    // Read from ref so that clearing pendingTermId later does NOT retrigger this.
-    if (pendingRef.current) return;
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [active]);
+    const els = SECTIONS.map(s => document.getElementById(s.id)).filter(Boolean);
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) setActive(entry.target.id);
+      });
+    }, { rootMargin: '-80px 0px -70% 0px' });
+    els.forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
 
   const nav = useMemo(() => ({ goToTerm, pendingTermId, clearPendingTerm }), [goToTerm, pendingTermId, clearPendingTerm]);
 
-  const renderSection = () => {
-    switch (active) {
-      case "foundations": return <Foundations />;
-      case "frameworks":  return <Frameworks />;
-      case "pipeline":    return <Pipeline />;
-      case "tools":       return <Tools />;
-      case "metrics":     return <Metrics />;
-      case "glossary":    return <Glossary />;
-      default:            return <Foundations />;
-    }
-  };
-
-  const activeIdx = SECTIONS.findIndex(s => s.id === active);
-
   return (
     <NavContext.Provider value={nav}>
-      <div className="shell" ref={mainRef}>
+      <div className="shell">
         <a href="/" className="back">← back to index</a>
         <div className="meta-row">
           <span className="cat-badge"><span className="dot"></span>devsecops</span>
@@ -1990,7 +1966,7 @@ function App() {
                   key={s.id}
                   type="button"
                   className={"chip" + (active === s.id ? " active" : "")}
-                  onClick={() => setActive(s.id)}
+                  onClick={() => scrollToSection(s.id)}
                 >
                   <span className="num">{String(i + 1).padStart(2, "0")}</span>
                   <span>{s.label}</span>
@@ -2000,20 +1976,12 @@ function App() {
           </div>
         </div>
 
-        {renderSection()}
-
-        <div className="foot">
-          {activeIdx > 0 ? (
-            <button type="button" className="linkbtn" onClick={() => setActive(SECTIONS[activeIdx - 1].id)}>
-              ← {SECTIONS[activeIdx - 1].label}
-            </button>
-          ) : <span />}
-          {activeIdx < SECTIONS.length - 1 ? (
-            <button type="button" className="linkbtn next" onClick={() => setActive(SECTIONS[activeIdx + 1].id)}>
-              {SECTIONS[activeIdx + 1].label} →
-            </button>
-          ) : <span />}
-        </div>
+        <section id="foundations"><Foundations /></section>
+        <section id="frameworks"><Frameworks /></section>
+        <section id="pipeline"><Pipeline /></section>
+        <section id="tools"><Tools /></section>
+        <section id="metrics"><Metrics /></section>
+        <section id="glossary"><Glossary /></section>
 
         <div className="tags">
           {["devsecops","dsovs","dsomm","owasp","cicd","advisory","framework"].map(t => (
