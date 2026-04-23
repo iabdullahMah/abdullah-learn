@@ -111,18 +111,26 @@
     margin: 0 0 24px;
   }
 
-  /* ── Horizontal pill-chip TOC (the standard) ─────────────── */
+  /* ── Sticky section nav + category-accented chips ─────────── */
+  .navwrap {
+    position: sticky;
+    top: env(safe-area-inset-top);
+    z-index: 30;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 14px calc(max(env(safe-area-inset-left), 16px) * -1)
+           22px
+           calc(max(env(safe-area-inset-right), 16px) * -1);
+  }
   .page-toc {
     display: flex;
     gap: 6px;
     overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
-    margin: 0 calc(max(env(safe-area-inset-left), 16px) * -1)
-           28px
-           calc(max(env(safe-area-inset-right), 16px) * -1);
-    padding: 4px max(env(safe-area-inset-left), 16px) 10px
-                 max(env(safe-area-inset-right), 16px);
+    padding: 9px max(env(safe-area-inset-left), 16px);
     scrollbar-width: none;
   }
   .page-toc::-webkit-scrollbar { display: none; }
@@ -140,6 +148,7 @@
     text-decoration: none;
     scroll-snap-align: start;
     white-space: nowrap;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
   }
   .page-toc a:active,
   .page-toc a:focus-visible {
@@ -147,6 +156,11 @@
     border-color: color-mix(in srgb, var(--accent) 40%, transparent);
     color: var(--fg);
     outline: none;
+  }
+  .page-toc a.active {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    color: var(--fg);
   }
 
   /* ── Numbered section prefix ─────────────────────────────── */
@@ -492,17 +506,19 @@
     <p class="lead">Security Assertion Markup Language — how single sign-on actually works, how attackers tear it apart, and why Golden SAML is the attack you have to know cold.</p>
   </header>
 
-  <!-- Horizontal pill-chip TOC -->
-  <nav class="page-toc" aria-label="Sections">
-    <a href="#normal">Normal</a>
-    <a href="#flow">Flow</a>
-    <a href="#real-life">Okta → Slack</a>
-    <a href="#attacks">Attacks</a>
-    <a href="#golden">Golden SAML</a>
-    <a href="#solarwinds">SolarWinds</a>
-    <a href="#cves">CVEs</a>
-    <a href="#defense">Defense</a>
-  </nav>
+  <!-- Sticky section nav -->
+  <div class="navwrap" id="topnav">
+    <nav class="page-toc" aria-label="Sections">
+      <a href="#normal">Normal</a>
+      <a href="#flow">Flow</a>
+      <a href="#real-life">Okta → Slack</a>
+      <a href="#attacks">Attacks</a>
+      <a href="#golden">Golden SAML</a>
+      <a href="#solarwinds">SolarWinds</a>
+      <a href="#cves">CVEs</a>
+      <a href="#defense">Defense</a>
+    </nav>
+  </div>
 
   <section>
     <p>SAML (Security Assertion Markup Language) exists so you log in once at a central authority and every connected app trusts that login — no separate password per app, no duplicate user databases.</p>
@@ -819,6 +835,27 @@ function Stepper() {
 }
 
 ReactDOM.createRoot(document.getElementById('saml-flow')).render(<Stepper/>);
+</script>
+
+<script>
+(function() {
+  var ids = ['normal','flow','real-life','attacks','golden','solarwinds','cves','defense'];
+  var navLinks = document.querySelectorAll('.page-toc a[href^="#"]');
+  var targets = ids.map(function(id) { return document.getElementById(id); }).filter(Boolean);
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        navLinks.forEach(function(l) { l.classList.remove('active'); });
+        var link = document.querySelector('.page-toc a[href="#' + entry.target.id + '"]');
+        if (link) {
+          link.classList.add('active');
+          link.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+        }
+      }
+    });
+  }, { rootMargin: '-80px 0px -70% 0px' });
+  targets.forEach(function(t) { observer.observe(t); });
+})();
 </script>
 
 <!-- Shared enhancements — REQUIRED before </body> -->
