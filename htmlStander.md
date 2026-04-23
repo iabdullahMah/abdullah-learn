@@ -240,7 +240,8 @@ keep the visual language consistent.
 
 .chip {
   display: inline-flex; align-items: center; gap: 7px;
-  min-height: 38px; padding: 7px 13px;
+  min-height: var(--tap);             /* 44px — rule #4 */
+  padding: 7px 13px;
   border: 1px solid var(--border);
   background: var(--bg-raised);
   border-radius: 999px;               /* pill, never sharp */
