@@ -486,13 +486,29 @@
     text-decoration: none;
   }
   .tags .tag:active { background: var(--bg-card-hover); color: var(--fg); }
+
+  /* Back-to-top */
+  .btt {
+    position: fixed;
+    bottom: max(20px, calc(20px + env(safe-area-inset-bottom)));
+    right: max(20px, calc(20px + env(safe-area-inset-right)));
+    width: var(--tap); height: var(--tap);
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    color: var(--fg-muted);
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none; font-size: 1.1rem; z-index: 50;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btt:hover { color: var(--fg); background: var(--bg-card-hover); }
 </style>
 </head>
 
 <body>
 <article class="page prose" data-cat="auth">
 
-  <a href="/" class="back-link">← index</a>
+  <a href="/" class="back-link">← back to index</a>
 
   <header>
     <div class="meta-row">
@@ -700,7 +716,11 @@
     <a class="tag" data-tag="htb">htb</a>
   </div>
 
+  <a href="/" class="back-link">← back to index</a>
+
 </article>
+
+<a href="#topnav" class="btt" title="Back to top" aria-label="Back to top">↑</a>
 
 <!-- React + Babel for interactive flow stepper -->
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>

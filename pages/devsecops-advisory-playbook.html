@@ -831,6 +831,23 @@
     font-family: var(--font-mono);
     font-size: 12px;
   }
+
+  /* ---------- Back-to-top ---------- */
+  .btt {
+    position: fixed;
+    bottom: max(20px, calc(20px + env(safe-area-inset-bottom)));
+    right: max(20px, calc(20px + env(safe-area-inset-right)));
+    width: var(--tap); height: var(--tap);
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--fg-muted);
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none; font-size: 1.1rem; z-index: 50;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btt:hover { color: var(--fg); background: var(--bg-card-hover); }
 </style>
 
 </head>
@@ -838,7 +855,7 @@
 
 <div id="root">
   <div class="shell">
-    <a href="/" class="back">← index</a>
+    <a href="/" class="back">← back to index</a>
     <div class="meta-row">
       <span class="cat-badge"><span class="dot"></span>devsecops</span>
       <span class="date">2026-04-16</span>
@@ -848,6 +865,9 @@
     <div id="loading">If this persists, check that JavaScript is enabled.</div>
   </div>
 </div>
+
+<a href="#" class="btt" title="Back to top" aria-label="Back to top"
+   onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">↑</a>
 
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 
@@ -1954,7 +1974,7 @@ function App() {
   return (
     <NavContext.Provider value={nav}>
       <div className="shell" ref={mainRef}>
-        <a href="/" className="back">← index</a>
+        <a href="/" className="back">← back to index</a>
         <div className="meta-row">
           <span className="cat-badge"><span className="dot"></span>devsecops</span>
           <span className="date">2026-04-16</span>
