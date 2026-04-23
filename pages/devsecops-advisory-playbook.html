@@ -1982,12 +1982,6 @@ function App() {
         <h1 className="title">DevSecOps <em>Playbook</em></h1>
         <p className="lead">A personal reference for building security into the <T id="sdlc" />. Foundations, <T id="dsovs" /> + <T id="dsomm" /> frameworks, pipeline stage-by-stage, tool catalogue, and KPIs. Every concept and tool is cross-linked to the glossary.</p>
 
-        <div className="tags">
-          {["devsecops","dsovs","dsomm","owasp","cicd","advisory","framework"].map(t => (
-            <a key={t} className="tag" data-tag={t} href={"/?tag=" + encodeURIComponent(t)}>{t}</a>
-          ))}
-        </div>
-
         <div className="navwrap">
           <div className="navscroll">
             <div className="navrow">
@@ -2020,6 +2014,14 @@ function App() {
             </button>
           ) : <span />}
         </div>
+
+        <div className="tags">
+          {["devsecops","dsovs","dsomm","owasp","cicd","advisory","framework"].map(t => (
+            <a key={t} className="tag" data-tag={t} href={"/?tag=" + encodeURIComponent(t)}>{t}</a>
+          ))}
+        </div>
+
+        <a href="/" className="back">← back to index</a>
       </div>
     </NavContext.Provider>
   );

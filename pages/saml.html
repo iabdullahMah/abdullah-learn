@@ -41,75 +41,53 @@
 
 <style>
   /* Page-specific styles — CSS vars only, no hex */
+  :root {
+    --d-auth: #f5b544;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) { --d-auth: #d97706; }
+  }
+  :root[data-theme="light"] { --d-auth: #d97706; }
+
   .page {
-    max-width: 760px;
+    width: 100%; max-width: 900px;
     margin: 0 auto;
-    padding: calc(env(safe-area-inset-top) + 20px)
-             max(env(safe-area-inset-right), 16px)
-             calc(env(safe-area-inset-bottom) + 56px)
-             max(env(safe-area-inset-left), 16px);
+    padding: 24px 20px 64px;
   }
+  @media (min-width: 768px) { .page { padding: 40px 32px 80px; } }
 
-  .back-link {
-    display: inline-flex;
-    align-items: center;
+  .back {
+    display: inline-flex; align-items: center;
     min-height: var(--tap);
-    padding: 0 4px;
-    color: var(--fg-muted);
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--fg-muted); letter-spacing: 0.03em;
     text-decoration: none;
-    font-size: 15px;
-    margin-bottom: 8px;
   }
-  .back-link:active { color: var(--fg); }
+  .back:hover { color: var(--fg); }
 
-  .meta-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    color: var(--fg-subtle);
-    font-size: 13px;
-    margin: 4px 0 12px;
+  .meta-row { display: flex; align-items: center; gap: 10px; margin: 20px 0 14px; }
+  .cat-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 24px; padding: 0 10px;
+    border: 1px solid var(--border-strong); border-radius: 999px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--fg); letter-spacing: 0.04em; text-transform: lowercase;
   }
-  .meta-row .dot {
-    width: 3px; height: 3px;
-    background: var(--fg-subtle);
-    border-radius: 50%;
-    opacity: .6;
-  }
-  .cat-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
-    border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
-    color: var(--fg);
-    font-size: 12px;
-    font-weight: 500;
-  }
-  .cat-chip::before {
-    content: "";
-    width: 6px; height: 6px;
-    background: var(--fg);
-    border-radius: 50%;
+  .cat-badge .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--d-auth);
     filter: var(--accent-filter);
   }
+  .date { font-family: var(--font-mono); font-size: 11px; color: var(--fg-subtle); letter-spacing: 0.04em; }
 
-  .page h1 {
-    font-family: var(--font-display);
-    font-size: clamp(32px, 7vw, 48px);
-    line-height: 1.05;
-    margin: 8px 0 14px;
-    letter-spacing: -0.02em;
+  h1.title {
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(32px, 7vw, 56px); line-height: 1.05;
+    letter-spacing: -0.01em; margin: 6px 0 22px; color: var(--fg);
   }
-  .page .lead {
-    font-size: 17px;
-    line-height: 1.55;
-    color: var(--fg-muted);
-    margin: 0 0 24px;
-  }
+  h1.title em { font-style: italic; }
+
+  p.lead { font-size: 17px; color: var(--fg); margin: 0 0 22px; }
 
   /* ── Sticky section nav + category-accented chips ─────────── */
   .navwrap {
@@ -506,21 +484,16 @@
 </head>
 
 <body>
-<article class="page prose" data-cat="auth">
+<article class="page">
+  <a class="back" href="/">← back to index</a>
 
-  <a href="/" class="back-link">← back to index</a>
+  <div class="meta-row">
+    <span class="cat-badge"><span class="dot" aria-hidden="true"></span>auth</span>
+    <span class="date">2026-04-19</span>
+  </div>
 
-  <header>
-    <div class="meta-row">
-      <span class="cat-chip">Auth &amp; Sessions</span>
-      <span class="dot"></span>
-      <time datetime="2026-04-19">2026-04-19</time>
-      <span class="dot"></span>
-      <span>~10 min</span>
-    </div>
-    <h1>SAML</h1>
-    <p class="lead">Security Assertion Markup Language — how single sign-on actually works, how attackers tear it apart, and why Golden SAML is the attack you have to know cold.</p>
-  </header>
+  <h1 class="title"><em>SAML.</em></h1>
+  <p class="lead">Security Assertion Markup Language — how single sign-on actually works, how attackers tear it apart, and why Golden SAML is the attack you have to know cold.</p>
 
   <!-- Sticky section nav -->
   <div class="navwrap" id="topnav">
@@ -716,7 +689,7 @@
     <a class="tag" data-tag="htb">htb</a>
   </div>
 
-  <a href="/" class="back-link">← back to index</a>
+  <a class="back" href="/">← back to index</a>
 
 </article>
 
